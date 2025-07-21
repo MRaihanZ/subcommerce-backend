@@ -1,0 +1,29 @@
+package db
+
+import (
+	"log"
+
+	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
+)
+
+var DB *sqlx.DB
+
+func errorInitDB() {
+	log.Println("Error in InitDB function")
+	message := recover()
+	log.Println("ERROR: ", message)
+}
+
+func InitDB(db_user string, db_pass string, db_host string, db_port string, db_name string) {
+	dsn := "postgres://" + db_user + ":" + db_pass + "@" + db_host + ":" + db_port + "/" + db_name + "?sslmode=disable"
+	var err error
+	DB, err = sqlx.Connect("postgres", dsn)
+	if err != nil {
+		defer errorInitDB()
+		errMessage := "Failed to connect to database: " + err.Error()
+		panic(errMessage)
+	}
+
+	log.Println("Database connected")
+}
