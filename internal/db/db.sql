@@ -19,13 +19,19 @@ CREATE TABLE
 CREATE TABLE
     sellers (
         id UUID PRIMARY KEY,
-        user_id UUID CONSTRAINT fk_s_user_id REFERENCES users (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
         CONSTRAINT uq_s_seller_user UNIQUE (id, user_id),
         name VARCHAR(50) NOT NULL,
         img TEXT DEFAULT '/assets/img/profile1.jpg' NOT NULL,
         address TEXT NOT NULL,
         sold_products BIGINT DEFAULT 0 NOT NULL,
         created_at TIMESTAMP DEFAULT NOW () NOT NULL
+    );
+
+CREATE TABLE
+    intervals (
+        id SERIAL PRIMARY KEY,
+        code VARCHAR(1),
+        name VARCHAR(6)
     );
 
 CREATE TABLE
@@ -46,8 +52,10 @@ CREATE TABLE
     product_variants (
         id SERIAL PRIMARY KEY,
         product_id INT CONSTRAINT fk_pv_product_id REFERENCES products (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
+        interval_id INT CONSTRAINT fk_p_interval_id REFERENCES intervals (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
         is_default BOOLEAN DEFAULT TRUE NOT NULL, -- If true, the variant will be hidden. if false, it will be shown.
         name VARCHAR(20),
+        interval SMALLINT,
         stock SMALLINT DEFAULT 0 NOT NULL,
         price BIGINT DEFAULT 0 NOT NULL,
         discount SMALLINT DEFAULT 0 NOT NULL,
@@ -65,10 +73,10 @@ CREATE TABLE
 CREATE TABLE
     ratings (
         id SERIAL PRIMARY KEY,
-        product_id INT CONSTRAINT fk_r_product_id REFERENCES products (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
-        product_variant_id INT CONSTRAINT fk_r_product_variant_id REFERENCES product_variants (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
-        user_id UUID CONSTRAINT fk_r_user_id REFERENCES users (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
-        CONSTRAINT uq_r_product_product_variant_user UNIQUE (product_id, product_variant_id, user_id),
+        product_id INT CONSTRAINT fk_ra_product_id REFERENCES products (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
+        product_variant_id INT CONSTRAINT fk_ra_product_variant_id REFERENCES product_variants (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
+        user_id UUID CONSTRAINT fk_ra_user_id REFERENCES users (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
+        CONSTRAINT uq_ra_product_product_variant_user UNIQUE (product_id, product_variant_id, user_id),
         rating INT CHECK (rating BETWEEN 1 AND 5) DEFAULT 5 NOT NULL,
         comment TEXT,
         created_at TIMESTAMP DEFAULT NOW () NOT NULL,
@@ -151,6 +159,18 @@ CREATE TABLE
         is_user BOOLEAN DEFAULT TRUE NOT NULL,
         content TEXT NOT NULL,
         sent_at TIMESTAMP DEFAULT NOW () NOT NULL
+    );
+
+CREATE TABLE
+    reports (
+        id UUID PRIMARY KEY,
+        user_id UUID CONSTRAINT fk_re_user_id REFERENCES users (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
+        seller_id UUID CONSTRAINT fk_re_seller_id REFERENCES sellers (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
+        product_id INT CONSTRAINT fk_re_product_id REFERENCES products (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
+        product_variant_id INT CONSTRAINT fk_re_product_variant_id REFERENCES product_variants (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
+        description TEXT NOT NULL,
+        target_role VARCHAR(10) CHECK (target_role IN ('admin', 'seller')),
+        created_at TIMESTAMP DEFAULT NOW () NOT NULL
     );
 
 -- TO BACKUP
