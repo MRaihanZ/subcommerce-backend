@@ -1,39 +1,58 @@
 package model
 
 import (
+	"database/sql"
+	"errors"
+	"log"
+
 	"github.com/MRaihanZ/subcommerce-backend/internal/db"
+	"github.com/MRaihanZ/subcommerce-backend/internal/entities"
+	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
 )
 
-type User struct {
-	ID   int    `json:"id"`
-	Name string `json:"name"`
-	Test int    `json:"test"`
+func GetAllUsers() ([]entities.User, error) {
+	var check []entities.User
+	err := db.DB.Select(&check, "SELECT * FROM users")
+	if err != nil {
+		log.Println("ERROR")
+		return nil, err
+	}
+
+	if len(check) == 0 {
+		log.Println("NO DATA")
+		return nil, nil
+	}
+
+	return check, nil
 }
 
-// func errorGetAllUsers() {
-// 	log.Fatalln("Error in GetAllUsers function")
-// 	message := recover()
-// 	log.Fatalln("ERROR: ", message)
-// }
+func GetUserById(id string) (*entities.User, error) {
+	var user entities.User
+	err := db.DB.Get(&user, "SELECT * FROM users WHERE id = $1", id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
 
-func GetAllUsers() ([]User, error) {
-	rows, err := db.DB.Query("SELECT * FROM users WHERE name = some")
+	return &user, nil
+}
+
+func CreateUser(name string, email string, dob string, password string) (*uuid.UUID, error) {
+	var id uuid.UUID
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return nil, err
 	}
-	// if rows != nil {
-	// 	return nil, err
-	// }
-	defer rows.Close()
 
-	var users []User
-	for rows.Next() {
-		var u User
-		err = rows.Scan(&u.ID, &u.Name, &u.Test)
-		if err != nil {
-			return nil, err
-		}
-		users = append(users, u)
+	id = uuid.New()
+	err = db.DB.QueryRowx("INSERT INTO users (id, name, email, dob, password) VALUES ($1, $2, $3, $4, $5) RETURNING id",
+		id, name, email, dob, hashedPassword,
+	).Scan(&id)
+	if err != nil {
+		return nil, err
 	}
-	return users, nil
+	return &id, nil
 }

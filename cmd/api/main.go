@@ -23,18 +23,21 @@ func main() {
 
 	r := gin.Default()
 
-	// CORS (adjust origin as needed)
-	r.Use(session.CorsMiddleware())
-
 	// Session setup
 	store := cookie.NewStore([]byte("secret"))
-	r.Use(sessions.Sessions("mysession", store))
+
+	// (CORS, Session)
+	r.Use(session.CorsMiddleware(), sessions.Sessions("mysession", store))
 
 	db.InitDB(os.Getenv("DB_USER"), os.Getenv("DB_PASS"), os.Getenv("DB_HOST"), os.Getenv("DB_PORT"), os.Getenv("DB_NAME"))
+
 	// Routes
-	r.GET("/data", controller.GetUsers)
+	// users
+	r.GET("/api/v1/users", controller.GetUsersHandler)
+	r.GET("/api/v1/users/:id", controller.GetUserHandler)
+	r.POST("/api/v1/users", controller.CreateUserHandler)
+
+	// products
+	// r.GET("/api/v1/products", controller.GetUser)
 	r.Run(":8080")
-	// r.POST("/data", controller.CreateUser)
-	// r.POST("/login", controller.Login)
-	// r.POST("/logout", controller.Logout)
 }
