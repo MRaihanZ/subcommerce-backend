@@ -35,7 +35,7 @@ func main() {
 	// users
 	r.GET("/api/v1/users", controller.GetUsersHandler)
 	r.GET("/api/v1/users/:id", controller.GetUserHandler)
-	r.POST("/api/v1/users", controller.CreateUserHandler)
+	r.POST("/api/v1/auth/register", controller.CreateUserHandler)
 
 	// products
 	// r.GET("/api/v1/products", controller.GetUser)
