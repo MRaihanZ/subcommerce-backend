@@ -1,4 +1,4 @@
-package entities
+package entity
 
 type Response[D any] struct {
 	Code   string  `json:"code"`

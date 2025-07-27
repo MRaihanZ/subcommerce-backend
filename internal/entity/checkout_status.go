@@ -1,4 +1,4 @@
-package entities
+package entity
 
 type CheckoutStatuses struct {
 	Id   int    `json:"id"`

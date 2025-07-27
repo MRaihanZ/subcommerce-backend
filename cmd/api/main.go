@@ -4,7 +4,7 @@ import (
 	"log"
 	"os"
 
-	controller "github.com/MRaihanZ/subcommerce-backend/internal/controllers"
+	"github.com/MRaihanZ/subcommerce-backend/internal/controller"
 	"github.com/MRaihanZ/subcommerce-backend/internal/db"
 	"github.com/MRaihanZ/subcommerce-backend/internal/session"
 
@@ -32,10 +32,12 @@ func main() {
 	db.InitDB(os.Getenv("DB_USER"), os.Getenv("DB_PASS"), os.Getenv("DB_HOST"), os.Getenv("DB_PORT"), os.Getenv("DB_NAME"))
 
 	// Routes
+	// Auth
+	r.POST("/api/v1/auth/register", controller.CreateUserHandler)
+
 	// users
 	r.GET("/api/v1/users", controller.GetUsersHandler)
 	r.GET("/api/v1/users/:id", controller.GetUserHandler)
-	r.POST("/api/v1/auth/register", controller.CreateUserHandler)
 
 	// products
 	// r.GET("/api/v1/products", controller.GetUser)

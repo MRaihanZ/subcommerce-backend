@@ -1,4 +1,4 @@
-package entities
+package entity
 
 type SignIn struct {
 	Email    string `json:"email"`

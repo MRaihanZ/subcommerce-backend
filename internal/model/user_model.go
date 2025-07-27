@@ -6,13 +6,13 @@ import (
 	"log"
 
 	"github.com/MRaihanZ/subcommerce-backend/internal/db"
-	"github.com/MRaihanZ/subcommerce-backend/internal/entities"
+	"github.com/MRaihanZ/subcommerce-backend/internal/entity"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
-func GetAllUsers() ([]entities.User, error) {
-	var check []entities.User
+func GetAllUsers() ([]entity.User, error) {
+	var check []entity.User
 	err := db.DB.Select(&check, "SELECT * FROM users")
 	if err != nil {
 		log.Println("ERROR")
@@ -27,8 +27,8 @@ func GetAllUsers() ([]entities.User, error) {
 	return check, nil
 }
 
-func GetUserById(id string) (*entities.User, error) {
-	var user entities.User
+func GetUserById(id string) (*entity.User, error) {
+	var user entity.User
 	err := db.DB.Get(&user, "SELECT * FROM users WHERE id = $1", id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {

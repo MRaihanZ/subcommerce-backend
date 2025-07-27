@@ -1,4 +1,4 @@
-package entities
+package entity
 
 type SignUp struct {
 	Name     string `json:"name"`
