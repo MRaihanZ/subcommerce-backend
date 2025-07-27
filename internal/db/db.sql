@@ -19,6 +19,7 @@ CREATE TABLE
 CREATE TABLE
     sellers (
         id UUID PRIMARY KEY,
+        user_id UUID CONSTRAINT fk_s_user_id REFERENCES users (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
         CONSTRAINT uq_s_seller_user UNIQUE (id, user_id),
         name VARCHAR(50) NOT NULL,
         img TEXT DEFAULT '/assets/img/profile1.jpg' NOT NULL,
@@ -52,7 +53,7 @@ CREATE TABLE
     product_variants (
         id SERIAL PRIMARY KEY,
         product_id INT CONSTRAINT fk_pv_product_id REFERENCES products (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
-        interval_id INT CONSTRAINT fk_p_interval_id REFERENCES intervals (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
+        interval_id INT CONSTRAINT fk_pv_interval_id REFERENCES intervals (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
         is_default BOOLEAN DEFAULT TRUE NOT NULL, -- If true, the variant will be hidden. if false, it will be shown.
         name VARCHAR(20),
         interval SMALLINT,
