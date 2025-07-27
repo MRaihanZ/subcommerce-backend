@@ -34,6 +34,7 @@ func main() {
 	// Routes
 	// Auth
 	r.POST("/api/v1/auth/register", controller.CreateUserHandler)
+	r.POST("/api/v1/auth/login", controller.VerifyUserHandler)
 
 	// users
 	r.GET("/api/v1/users", controller.GetUsersHandler)
