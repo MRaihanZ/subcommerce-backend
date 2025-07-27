@@ -29,6 +29,13 @@ CREATE TABLE
     );
 
 CREATE TABLE
+    admin (
+        id UUID PRIMARY KEY,
+        name VARCHAR(50) NOT NULL,
+        password VARCHAR(60) NOT NULL,
+    );
+
+CREATE TABLE
     intervals (
         id SERIAL PRIMARY KEY,
         code VARCHAR(1),
@@ -58,6 +65,7 @@ CREATE TABLE
         name VARCHAR(20),
         interval SMALLINT,
         stock SMALLINT DEFAULT 0 NOT NULL,
+        sold INT DEFAULT 0 NOT NULL,
         price BIGINT DEFAULT 0 NOT NULL,
         discount SMALLINT DEFAULT 0 NOT NULL,
         min_order SMALLINT DEFAULT 1 NOT NULL
