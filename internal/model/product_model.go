@@ -1,9 +1,6 @@
 package model
 
 import (
-	"database/sql"
-	"errors"
-
 	"github.com/MRaihanZ/subcommerce-backend/internal/db"
 	"github.com/MRaihanZ/subcommerce-backend/internal/entity"
 )
@@ -37,10 +34,11 @@ func GetProductById(id string) (*entity.JsonProduct, error) {
 					WHERE p.active = true AND p.id = $1;`, id)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil
-		}
 		return nil, err
+	}
+
+	if len(products) == 0 {
+		return nil, nil
 	}
 
 	productsMap := &entity.JsonProduct{
