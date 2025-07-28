@@ -10,19 +10,19 @@ import (
 )
 
 func GetAllUsers() ([]entity.User, error) {
-	var check []entity.User
-	err := db.DB.Select(&check, "SELECT * FROM users")
+	var users []entity.User
+	err := db.DB.Select(&users, "SELECT * FROM users")
 	if err != nil {
 		log.Println("ERROR")
 		return nil, err
 	}
 
-	if len(check) == 0 {
+	if len(users) == 0 {
 		log.Println("NO DATA")
 		return nil, nil
 	}
 
-	return check, nil
+	return users, nil
 }
 
 func GetUserById(id string) (*entity.User, error) {
