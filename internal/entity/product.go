@@ -27,7 +27,7 @@ type QueryProduct struct {
 type JsonProduct struct {
 	Id              int              `db:"id" json:"id"`
 	Name            string           `db:"name" json:"name"`
-	PiImage         []ProductImage   `json:"image"`
+	PiImages        []ProductImage   `json:"images"`
 	Description     string           `db:"description" json:"description"`
 	Sold            int              `db:"sold" json:"sold"`
 	AverageRating   float32          `db:"average_rating" json:"average_rating"`

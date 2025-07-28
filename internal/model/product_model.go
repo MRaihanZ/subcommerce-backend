@@ -56,7 +56,7 @@ func GetProductById(id string) (*entity.JsonProduct, error) {
 	productVariantsMap := make(map[int]*entity.ProductVariant)
 
 	for _, row := range products {
-		productsMap.PiImage = append(productsMap.PiImage, entity.ProductImage{
+		productsMap.PiImages = append(productsMap.PiImages, entity.ProductImage{
 			Image: row.PiImage,
 		})
 		if _, exist := productVariantsMap[row.PvId]; !exist {
