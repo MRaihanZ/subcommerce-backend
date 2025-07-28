@@ -21,7 +21,7 @@ func GetProductsHandler(c *gin.Context) {
 	}
 
 	if products == nil {
-		msg := "no user found"
+		msg := "no products found"
 		res := entity.Response[[]entity.ProductSummarize]{
 			Code:   404,
 			Status: "error",
