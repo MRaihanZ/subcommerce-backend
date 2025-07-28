@@ -59,7 +59,7 @@ type ProductSummarize struct {
 	Name          string  `db:"name" json:"name"`
 	PvName        string  `db:"pv_name" json:"pv_name"`
 	Image         string  `db:"img" json:"img"`
-	Price         string  `db:"price" json:"price"`
+	Price         int     `db:"price" json:"price"`
 	AverageRating float32 `db:"average_rating" json:"average_rating"`
 	Sold          int     `db:"sold" json:"sold"`
 	SellerName    string  `db:"seller_name" json:"seller_name"`
