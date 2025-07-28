@@ -11,7 +11,7 @@ func GetProductsHandler(c *gin.Context) {
 	if err != nil {
 		msg := err.Error()
 		res := entity.Response[[]entity.ProductSummarize]{
-			Code:   "500",
+			Code:   500,
 			Status: "error",
 			Data:   products,
 			Error:  &msg,
@@ -23,7 +23,7 @@ func GetProductsHandler(c *gin.Context) {
 	if products == nil {
 		msg := "no user found"
 		res := entity.Response[[]entity.ProductSummarize]{
-			Code:   "404",
+			Code:   404,
 			Status: "error",
 			Data:   products,
 			Error:  &msg,
@@ -33,7 +33,7 @@ func GetProductsHandler(c *gin.Context) {
 	}
 
 	res := entity.Response[[]entity.ProductSummarize]{
-		Code:   "200",
+		Code:   200,
 		Status: "ok",
 		Data:   products,
 		Error:  nil,
@@ -47,7 +47,7 @@ func GetProductHandler(c *gin.Context) {
 	if err != nil {
 		msg := err.Error()
 		res := entity.Response[*entity.JsonProduct]{
-			Code:   "500",
+			Code:   500,
 			Status: "error",
 			Data:   product,
 			Error:  &msg,
@@ -59,7 +59,7 @@ func GetProductHandler(c *gin.Context) {
 	if product == nil {
 		msg := "product not found"
 		res := entity.Response[*entity.JsonProduct]{
-			Code:   "404",
+			Code:   404,
 			Status: "error",
 			Data:   product,
 			Error:  &msg,
@@ -69,7 +69,7 @@ func GetProductHandler(c *gin.Context) {
 	}
 
 	res := entity.Response[*entity.JsonProduct]{
-		Code:   "200",
+		Code:   200,
 		Status: "ok",
 		Data:   product,
 		Error:  nil,

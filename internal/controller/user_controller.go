@@ -11,7 +11,7 @@ func GetUsersHandler(c *gin.Context) {
 	if err != nil {
 		msg := err.Error()
 		res := entity.Response[[]entity.User]{
-			Code:   "500",
+			Code:   500,
 			Status: "error",
 			Data:   users,
 			Error:  &msg,
@@ -23,7 +23,7 @@ func GetUsersHandler(c *gin.Context) {
 	if users == nil {
 		msg := "no user found"
 		res := entity.Response[[]entity.User]{
-			Code:   "404",
+			Code:   404,
 			Status: "error",
 			Data:   users,
 			Error:  &msg,
@@ -33,7 +33,7 @@ func GetUsersHandler(c *gin.Context) {
 	}
 
 	res := entity.Response[[]entity.User]{
-		Code:   "200",
+		Code:   200,
 		Status: "ok",
 		Data:   users,
 		Error:  nil,
@@ -47,7 +47,7 @@ func GetUserHandler(c *gin.Context) {
 	if err != nil {
 		msg := err.Error()
 		res := entity.Response[*entity.User]{
-			Code:   "500",
+			Code:   500,
 			Status: "error",
 			Data:   user,
 			Error:  &msg,
@@ -59,7 +59,7 @@ func GetUserHandler(c *gin.Context) {
 	if user == nil {
 		msg := "user not found"
 		res := entity.Response[*entity.User]{
-			Code:   "404",
+			Code:   404,
 			Status: "error",
 			Data:   user,
 			Error:  &msg,
@@ -69,7 +69,7 @@ func GetUserHandler(c *gin.Context) {
 	}
 
 	res := entity.Response[*entity.User]{
-		Code:   "200",
+		Code:   200,
 		Status: "ok",
 		Data:   user,
 		Error:  nil,

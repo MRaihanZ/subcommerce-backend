@@ -13,7 +13,7 @@ func CreateUserHandler(c *gin.Context) {
 	if err := c.BindJSON(&req); err != nil {
 		msg := err.Error()
 		res := entity.Response[entity.SignUp]{
-			Code:   "400",
+			Code:   400,
 			Status: "error",
 			Data:   req,
 			Error:  &msg,
@@ -25,7 +25,7 @@ func CreateUserHandler(c *gin.Context) {
 	if err != nil {
 		msg := err.Error()
 		res := entity.Response[*uuid.UUID]{
-			Code:   "500",
+			Code:   500,
 			Status: "error",
 			Data:   user,
 			Error:  &msg,
@@ -35,7 +35,7 @@ func CreateUserHandler(c *gin.Context) {
 	}
 
 	res := entity.Response[*uuid.UUID]{
-		Code:   "200",
+		Code:   200,
 		Status: "ok",
 		Data:   user,
 		Error:  nil,
@@ -48,7 +48,7 @@ func VerifyUserHandler(c *gin.Context) {
 	if err := c.BindJSON(&req); err != nil {
 		msg := err.Error()
 		res := entity.Response[entity.SignIn]{
-			Code:   "400",
+			Code:   400,
 			Status: "error",
 			Data:   req,
 			Error:  &msg,
@@ -61,7 +61,7 @@ func VerifyUserHandler(c *gin.Context) {
 	if err != nil {
 		msg := err.Error()
 		res := entity.Response[*entity.SignIn]{
-			Code:   "500",
+			Code:   500,
 			Status: "error",
 			Data:   user,
 			Error:  &msg,
@@ -73,7 +73,7 @@ func VerifyUserHandler(c *gin.Context) {
 	if user == nil {
 		msg := "user not found"
 		res := entity.Response[*entity.SignIn]{
-			Code:   "404",
+			Code:   404,
 			Status: "error",
 			Data:   user,
 			Error:  &msg,
@@ -85,7 +85,7 @@ func VerifyUserHandler(c *gin.Context) {
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
 		msg := err.Error()
 		res := entity.Response[*entity.SignIn]{
-			Code:   "401",
+			Code:   401,
 			Status: "error",
 			Data:   user,
 			Error:  &msg,
@@ -95,7 +95,7 @@ func VerifyUserHandler(c *gin.Context) {
 	}
 
 	res := entity.Response[*entity.SignIn]{
-		Code:   "200",
+		Code:   200,
 		Status: "ok",
 		Data:   user,
 		Error:  nil,
