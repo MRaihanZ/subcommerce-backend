@@ -41,6 +41,7 @@ func main() {
 	r.GET("/api/v1/users/:id", controller.GetUserHandler)
 
 	// products
-	// r.GET("/api/v1/products", controller.GetUser)
+	r.GET("/api/v1/products", controller.GetProductsHandler)
+	r.GET("/api/v1/products/:id", controller.GetProductHandler)
 	r.Run(":8080")
 }
