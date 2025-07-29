@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/MRaihanZ/subcommerce-backend/internal/entity"
@@ -128,12 +129,13 @@ func VerifyUserHandler(c *gin.Context) {
 func CheckStatus(c *gin.Context) {
 	session := sessions.Default(c)
 	id := session.Get("user_id")
-	if id == "" {
+	if id == nil {
+		msg := "id null"
 		res := entity.Response[*entity.SignIn]{
 			Code:   http.StatusUnauthorized,
-			Status: "ok",
+			Status: "error",
 			Data:   nil,
-			Error:  nil,
+			Error:  &msg,
 		}
 		c.JSON(http.StatusUnauthorized, res)
 		return
@@ -147,5 +149,40 @@ func CheckStatus(c *gin.Context) {
 		Error:  nil,
 	}
 	c.JSON(http.StatusOK, res)
+}
 
+func LogoutHandler(c *gin.Context) {
+	log.Println("Logout Called")
+	session := sessions.Default(c)
+	log.Println("session Called")
+	session.Clear()
+	log.Println("clear Called")
+	session.Options(sessions.Options{
+		Path:     "/",
+		MaxAge:   -1,
+		HttpOnly: true,
+		Secure:   false, // set true if using HTTPS
+		SameSite: http.SameSiteLaxMode,
+	})
+	log.Println("option Called")
+	if err := session.Save(); err != nil {
+		msg := "Failed to save session | " + err.Error()
+		res := entity.Response[*entity.SignIn]{
+			Code:   http.StatusInternalServerError,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusInternalServerError, res)
+		return
+	}
+	log.Println("save Called")
+
+	res := entity.Response[string]{
+		Code:   http.StatusOK,
+		Status: "ok",
+		Data:   "Logout Success",
+		Error:  nil,
+	}
+	c.JSON(http.StatusOK, res)
 }
