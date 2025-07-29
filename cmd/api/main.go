@@ -1,21 +1,32 @@
 package main
 
 import (
+	"encoding/base64"
 	"log"
+	"net/http"
 	"os"
 
 	"github.com/MRaihanZ/subcommerce-backend/internal/controller"
 	"github.com/MRaihanZ/subcommerce-backend/internal/db"
 	"github.com/MRaihanZ/subcommerce-backend/internal/session"
+	csrf "github.com/utrack/gin-csrf"
 
 	"github.com/gin-contrib/sessions"
-	"github.com/gin-contrib/sessions/cookie"
+	"github.com/gin-contrib/sessions/memstore"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
 
+func decodeBase64(str string) []byte {
+	decoded, err := base64.StdEncoding.DecodeString(str)
+	if err != nil {
+		log.Fatalf("Failed to decode base64 secret: %v", err)
+	}
+	return decoded
+}
+
 func main() {
-	// Load .env file
+	// load .env file
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Error loading .env file")
@@ -23,25 +34,57 @@ func main() {
 
 	r := gin.Default()
 
-	// Session setup
-	store := cookie.NewStore([]byte("secret"))
+	// session setup
+	store := memstore.NewStore(decodeBase64(os.Getenv("SESSION_SECRET_CURRENT")), decodeBase64(os.Getenv("SESSION_SECRET_OLD")))
+	// set cookie options
+	store.Options(sessions.Options{
+		Path:     "/",
+		MaxAge:   86400 * 7, // 7 days
+		HttpOnly: true,
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode,
+	})
+	// (CORS, session)
+	r.Use(session.CorsMiddleware(), sessions.Sessions("session_id", store))
 
-	// (CORS, Session)
-	r.Use(session.CorsMiddleware(), sessions.Sessions("mysession", store))
+	// CSRF middleware
+	r.Use(csrf.Middleware(csrf.Options{
+		Secret: string(decodeBase64(os.Getenv("CSRF_SECRET"))),
+		ErrorFunc: func(c *gin.Context) {
+			c.JSON(400, gin.H{"error": "CSRF token mismatch"})
+			c.Abort()
+		},
+	}))
 
 	db.InitDB(os.Getenv("DB_USER"), os.Getenv("DB_PASS"), os.Getenv("DB_HOST"), os.Getenv("DB_PORT"), os.Getenv("DB_NAME"))
 
-	// Routes
-	// Auth
-	r.POST("/api/v1/auth/register", controller.CreateUserHandler)
-	r.POST("/api/v1/auth/login", controller.VerifyUserHandler)
+	// routes
+	v1 := r.Group("/api/v1")
+
+	// csrf
+	csrfRoutes := v1.Group("/csrf")
+	// generate csrf token
+	csrfRoutes.GET("/", controller.CreateToken)
+	// csrf token from session
+	csrfRoutes.GET("/session", controller.GetToken)
+
+	// auth
+	auth := v1.Group("/auth")
+	auth.POST("/register", controller.CreateUserHandler)
+	auth.POST("/login", controller.VerifyUserHandler)
+	auth.GET("/status", controller.CheckStatus)
 
 	// users
-	r.GET("/api/v1/users", controller.GetUsersHandler)
-	r.GET("/api/v1/users/:id", controller.GetUserHandler)
+	users := v1.Group("/users")
+	users.GET("/", controller.GetUsersHandler)
+	users.GET("/:id", controller.GetUserHandler)
 
 	// products
-	r.GET("/api/v1/products", controller.GetProductsHandler)
-	r.GET("/api/v1/products/:id", controller.GetProductHandler)
+	products := v1.Group("/products")
+	products.GET("/api/v1/products", controller.GetProductsHandler)
+	products.GET("/api/v1/products/:id", controller.GetProductHandler)
+
+	// checkout
+	r.POST("")
 	r.Run(":8080")
 }

@@ -30,7 +30,7 @@ func CreateUserHandler(c *gin.Context) {
 		res := entity.Response[*uuid.UUID]{
 			Code:   http.StatusInternalServerError,
 			Status: "error",
-			Data:   user,
+			Data:   nil,
 			Error:  &msg,
 		}
 		c.JSON(http.StatusInternalServerError, res)
@@ -68,7 +68,7 @@ func VerifyUserHandler(c *gin.Context) {
 		res := entity.Response[*entity.SignIn]{
 			Code:   http.StatusInternalServerError,
 			Status: "error",
-			Data:   user,
+			Data:   nil,
 			Error:  &msg,
 		}
 		c.JSON(http.StatusInternalServerError, res)
@@ -80,7 +80,7 @@ func VerifyUserHandler(c *gin.Context) {
 		res := entity.Response[*entity.SignIn]{
 			Code:   http.StatusNotFound,
 			Status: "error",
-			Data:   user,
+			Data:   nil,
 			Error:  &msg,
 		}
 		c.JSON(http.StatusNotFound, res)
@@ -92,18 +92,11 @@ func VerifyUserHandler(c *gin.Context) {
 		res := entity.Response[*entity.SignIn]{
 			Code:   http.StatusUnauthorized,
 			Status: "error",
-			Data:   user,
+			Data:   nil,
 			Error:  &msg,
 		}
 		c.JSON(http.StatusUnauthorized, res)
 		return
-	}
-
-	res := entity.Response[*entity.SignIn]{
-		Code:   http.StatusOK,
-		Status: "ok",
-		Data:   user,
-		Error:  nil,
 	}
 
 	// save session
@@ -116,12 +109,43 @@ func VerifyUserHandler(c *gin.Context) {
 		res := entity.Response[*entity.SignIn]{
 			Code:   http.StatusInternalServerError,
 			Status: "error",
-			Data:   user,
+			Data:   nil,
 			Error:  &msg,
 		}
 		c.JSON(http.StatusInternalServerError, res)
 		return
 	}
 
+	res := entity.Response[*entity.SignIn]{
+		Code:   http.StatusOK,
+		Status: "ok",
+		Data:   user,
+		Error:  nil,
+	}
 	c.JSON(http.StatusOK, res)
+}
+
+func CheckStatus(c *gin.Context) {
+	session := sessions.Default(c)
+	id := session.Get("user_id")
+	if id == "" {
+		res := entity.Response[*entity.SignIn]{
+			Code:   http.StatusUnauthorized,
+			Status: "ok",
+			Data:   nil,
+			Error:  nil,
+		}
+		c.JSON(http.StatusUnauthorized, res)
+		return
+	}
+
+	stat := entity.Status{Status: "authenticated"}
+	res := entity.Response[entity.Status]{
+		Code:   http.StatusOK,
+		Status: "ok",
+		Data:   stat,
+		Error:  nil,
+	}
+	c.JSON(http.StatusOK, res)
+
 }
