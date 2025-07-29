@@ -81,8 +81,8 @@ func main() {
 
 	// products
 	products := v1.Group("/products")
-	products.GET("/api/v1/products", controller.GetProductsHandler)
-	products.GET("/api/v1/products/:id", controller.GetProductHandler)
+	products.GET("/products", controller.GetProductsHandler)
+	products.GET("/:id", controller.GetProductHandler)
 
 	// checkout
 	r.POST("")
