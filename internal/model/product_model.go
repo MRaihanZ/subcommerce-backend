@@ -7,11 +7,49 @@ import (
 
 func GetAllProductsSummarize() ([]entity.ProductSummarize, error) {
 	var products []entity.ProductSummarize
-	err := db.DB.Select(&products, `SELECT p.id, p.name, p.sold, p.average_rating, s.name AS seller_name, pi.img, pv.name AS pv_name, pv.price FROM products p 
+	err := db.DB.Select(&products, `SELECT p.id, p.name, p.sold, p.average_rating, s.name AS seller_name, pi.img, pv.id AS pv_id, pv.name AS pv_name, pv.price, pv.discount FROM products p 
 						JOIN sellers s ON p.seller_id = s.id
 						JOIN LATERAL (SELECT pi.img FROM product_images pi WHERE pi.product_id = p.id LIMIT 1) pi ON true
-						JOIN LATERAL (SELECT pv.name, pv.price FROM product_variants pv WHERE pv.product_id = p.id LIMIT 1) pv ON true
+						JOIN LATERAL (SELECT pv.id, pv.name, pv.price, pv.discount FROM product_variants pv WHERE pv.product_id = p.id LIMIT 1) pv ON true
 						WHERE p.active = true;`)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(products) == 0 {
+		return nil, nil
+	}
+
+	return products, nil
+}
+
+func GetAllProductsHotSummarize() ([]entity.ProductSummarize, error) {
+	var products []entity.ProductSummarize
+	err := db.DB.Select(&products, `SELECT p.id, p.name, p.sold, p.average_rating, s.name AS seller_name, pi.img, pv.id AS pv_id, pv.name AS pv_name, pv.price, pv.discount FROM products p 
+						JOIN sellers s ON p.seller_id = s.id
+						JOIN LATERAL (SELECT pi.img FROM product_images pi WHERE pi.product_id = p.id LIMIT 1) pi ON true
+						JOIN LATERAL (SELECT pv.id, pv.name, pv.price, pv.discount FROM product_variants pv 
+						WHERE pv.product_id = p.id ORDER BY pv.sold DESC LIMIT 1) pv ON true
+						WHERE p.active = true ORDER BY (p.average_rating * p.sold) DESC;`)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(products) == 0 {
+		return nil, nil
+	}
+
+	return products, nil
+}
+
+func GetAllProductsDiscountSummarize() ([]entity.ProductSummarize, error) {
+	var products []entity.ProductSummarize
+	err := db.DB.Select(&products, `SELECT p.id, p.name, p.sold, p.average_rating, s.name AS seller_name, pi.img, pv.id AS pv_id, pv.name AS pv_name, pv.price, pv.discount FROM products p 
+						JOIN sellers s ON p.seller_id = s.id
+						JOIN LATERAL (SELECT pi.img FROM product_images pi WHERE pi.product_id = p.id LIMIT 1) pi ON true
+						JOIN LATERAL (SELECT pv.id, pv.name, pv.price, pv.discount FROM product_variants pv WHERE pv.product_id = p.id ORDER BY pv.discount DESC LIMIT 1) pv ON true
+						WHERE p.active = true AND pv.discount > 0 
+						ORDER BY pv.discount DESC, p.average_rating DESC, p.sold DESC;`)
 	if err != nil {
 		return nil, err
 	}

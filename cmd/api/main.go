@@ -84,6 +84,8 @@ func main() {
 	products := v1.Group("/products")
 	products.GET("/", controller.GetProductsHandler)
 	products.GET("/:id", controller.GetProductHandler)
+	products.GET("/hot", controller.GetProductsHotHandler)
+	products.GET("/discount", controller.GetProductsDiscountHandler)
 
 	// carts := v1.Group("/carts")
 	// carts.GET("/", controller.GetCartsHandler)

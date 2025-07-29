@@ -41,6 +41,76 @@ func GetProductsHandler(c *gin.Context) {
 	c.JSON(200, res)
 }
 
+func GetProductsHotHandler(c *gin.Context) {
+	products, err := model.GetAllProductsHotSummarize()
+	if err != nil {
+		msg := err.Error()
+		res := entity.Response[[]entity.ProductSummarize]{
+			Code:   500,
+			Status: "error",
+			Data:   products,
+			Error:  &msg,
+		}
+		c.JSON(500, res)
+		return
+	}
+
+	if products == nil {
+		msg := "no products found"
+		res := entity.Response[[]entity.ProductSummarize]{
+			Code:   404,
+			Status: "error",
+			Data:   products,
+			Error:  &msg,
+		}
+		c.JSON(404, res)
+		return
+	}
+
+	res := entity.Response[[]entity.ProductSummarize]{
+		Code:   200,
+		Status: "ok",
+		Data:   products,
+		Error:  nil,
+	}
+	c.JSON(200, res)
+}
+
+func GetProductsDiscountHandler(c *gin.Context) {
+	products, err := model.GetAllProductsDiscountSummarize()
+	if err != nil {
+		msg := err.Error()
+		res := entity.Response[[]entity.ProductSummarize]{
+			Code:   500,
+			Status: "error",
+			Data:   products,
+			Error:  &msg,
+		}
+		c.JSON(500, res)
+		return
+	}
+
+	if products == nil {
+		msg := "no products found"
+		res := entity.Response[[]entity.ProductSummarize]{
+			Code:   404,
+			Status: "error",
+			Data:   products,
+			Error:  &msg,
+		}
+		c.JSON(404, res)
+		return
+	}
+
+	res := entity.Response[[]entity.ProductSummarize]{
+		Code:   200,
+		Status: "ok",
+		Data:   products,
+		Error:  nil,
+	}
+	c.JSON(200, res)
+}
+
 func GetProductHandler(c *gin.Context) {
 	id := c.Param("id")
 	product, err := model.GetProductById(id)
