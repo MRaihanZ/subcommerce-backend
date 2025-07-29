@@ -57,10 +57,12 @@ type ProductVariant struct {
 type ProductSummarize struct {
 	Id            int     `db:"id" json:"id"`
 	Name          string  `db:"name" json:"name"`
+	PvId          string  `db:"pv_id" json:"pv_id"`
 	PvName        string  `db:"pv_name" json:"pv_name"`
 	Image         string  `db:"img" json:"img"`
 	Price         int     `db:"price" json:"price"`
 	AverageRating float32 `db:"average_rating" json:"average_rating"`
 	Sold          int     `db:"sold" json:"sold"`
+	Discount      int     `db:"discount" json:"discount"`
 	SellerName    string  `db:"seller_name" json:"seller_name"`
 }
