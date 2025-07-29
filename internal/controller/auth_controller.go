@@ -1,8 +1,11 @@
 package controller
 
 import (
+	"net/http"
+
 	"github.com/MRaihanZ/subcommerce-backend/internal/entity"
 	"github.com/MRaihanZ/subcommerce-backend/internal/model"
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
@@ -13,34 +16,34 @@ func CreateUserHandler(c *gin.Context) {
 	if err := c.BindJSON(&req); err != nil {
 		msg := err.Error()
 		res := entity.Response[entity.SignUp]{
-			Code:   400,
+			Code:   http.StatusBadRequest,
 			Status: "error",
 			Data:   req,
 			Error:  &msg,
 		}
-		c.JSON(400, res)
+		c.JSON(http.StatusBadRequest, res)
 		return
 	}
 	user, err := model.CreateUser(req.Name, req.Email, req.Dob, req.Password)
 	if err != nil {
 		msg := err.Error()
 		res := entity.Response[*uuid.UUID]{
-			Code:   500,
+			Code:   http.StatusInternalServerError,
 			Status: "error",
 			Data:   user,
 			Error:  &msg,
 		}
-		c.JSON(500, res)
+		c.JSON(http.StatusInternalServerError, res)
 		return
 	}
 
 	res := entity.Response[*uuid.UUID]{
-		Code:   200,
+		Code:   http.StatusOK,
 		Status: "ok",
 		Data:   user,
 		Error:  nil,
 	}
-	c.JSON(200, res)
+	c.JSON(http.StatusOK, res)
 }
 
 func VerifyUserHandler(c *gin.Context) {
@@ -48,57 +51,77 @@ func VerifyUserHandler(c *gin.Context) {
 	if err := c.BindJSON(&req); err != nil {
 		msg := err.Error()
 		res := entity.Response[entity.SignIn]{
-			Code:   400,
+			Code:   http.StatusBadRequest,
 			Status: "error",
 			Data:   req,
 			Error:  &msg,
 		}
-		c.JSON(400, res)
+		c.JSON(http.StatusBadRequest, res)
 		return
 	}
+
+	csrfToken := c.GetHeader("X-CSRF-TOKEN")
 
 	user, err := model.GetUserByEmail(req.Email)
 	if err != nil {
 		msg := err.Error()
 		res := entity.Response[*entity.SignIn]{
-			Code:   500,
+			Code:   http.StatusInternalServerError,
 			Status: "error",
 			Data:   user,
 			Error:  &msg,
 		}
-		c.JSON(500, res)
+		c.JSON(http.StatusInternalServerError, res)
 		return
 	}
 
 	if user == nil {
 		msg := "user not found"
 		res := entity.Response[*entity.SignIn]{
-			Code:   404,
+			Code:   http.StatusNotFound,
 			Status: "error",
 			Data:   user,
 			Error:  &msg,
 		}
-		c.JSON(404, res)
+		c.JSON(http.StatusNotFound, res)
 		return
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
 		msg := err.Error()
 		res := entity.Response[*entity.SignIn]{
-			Code:   401,
+			Code:   http.StatusUnauthorized,
 			Status: "error",
 			Data:   user,
 			Error:  &msg,
 		}
-		c.JSON(401, res)
+		c.JSON(http.StatusUnauthorized, res)
 		return
 	}
 
 	res := entity.Response[*entity.SignIn]{
-		Code:   200,
+		Code:   http.StatusOK,
 		Status: "ok",
 		Data:   user,
 		Error:  nil,
 	}
-	c.JSON(200, res)
+
+	// save session
+	session := sessions.Default(c)
+	session.Set("user_id", user.Id)
+	session.Set("csrf_token", csrfToken)
+	session.Set("is_logged_in", true)
+	if err := session.Save(); err != nil {
+		msg := "Failed to save session | " + err.Error()
+		res := entity.Response[*entity.SignIn]{
+			Code:   http.StatusInternalServerError,
+			Status: "error",
+			Data:   user,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusInternalServerError, res)
+		return
+	}
+
+	c.JSON(http.StatusOK, res)
 }
