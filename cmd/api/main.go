@@ -70,8 +70,9 @@ func main() {
 
 	// auth
 	auth := v1.Group("/auth")
-	auth.POST("/register", controller.CreateUserHandler)
 	auth.POST("/login", controller.VerifyUserHandler)
+	auth.POST("/logout", controller.LogoutHandler)
+	auth.POST("/register", controller.CreateUserHandler)
 	auth.GET("/status", controller.CheckStatus)
 
 	// users
@@ -83,6 +84,10 @@ func main() {
 	products := v1.Group("/products")
 	products.GET("/", controller.GetProductsHandler)
 	products.GET("/:id", controller.GetProductHandler)
+
+	// carts := v1.Group("/carts")
+	// carts.GET("/", controller.GetCartsHandler)
+	// carts.GET("/add", controller.CreateCartHandler)
 
 	// checkout
 	r.POST("")
