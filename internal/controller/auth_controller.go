@@ -139,7 +139,7 @@ func CheckStatus(c *gin.Context) {
 		return
 	}
 
-	stat := entity.Status{Status: "authenticated"}
+	stat := entity.Status{Status: "authenticated", Id: id}
 	res := entity.Response[entity.Status]{
 		Code:   http.StatusOK,
 		Status: "ok",

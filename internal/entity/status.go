@@ -1,5 +1,6 @@
 package entity
 
 type Status struct {
-	Status string `json:"status"`
+	Status string      `json:"status"`
+	Id     interface{} `json:"id"`
 }
