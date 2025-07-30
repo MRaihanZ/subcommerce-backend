@@ -1,6 +1,8 @@
 package controller
 
 import (
+	"net/http"
+
 	"github.com/MRaihanZ/subcommerce-backend/internal/entity"
 	"github.com/MRaihanZ/subcommerce-backend/internal/model"
 	"github.com/gin-gonic/gin"
@@ -11,34 +13,34 @@ func GetUsersHandler(c *gin.Context) {
 	if err != nil {
 		msg := err.Error()
 		res := entity.Response[[]entity.User]{
-			Code:   500,
+			Code:   http.StatusInternalServerError,
 			Status: "error",
 			Data:   users,
 			Error:  &msg,
 		}
-		c.JSON(500, res)
+		c.JSON(http.StatusInternalServerError, res)
 		return
 	}
 
 	if users == nil {
 		msg := "no user found"
 		res := entity.Response[[]entity.User]{
-			Code:   404,
+			Code:   http.StatusNotFound,
 			Status: "error",
 			Data:   users,
 			Error:  &msg,
 		}
-		c.JSON(404, res)
+		c.JSON(http.StatusNotFound, res)
 		return
 	}
 
 	res := entity.Response[[]entity.User]{
-		Code:   200,
+		Code:   http.StatusOK,
 		Status: "ok",
 		Data:   users,
 		Error:  nil,
 	}
-	c.JSON(200, res)
+	c.JSON(http.StatusOK, res)
 }
 
 func GetUserHandler(c *gin.Context) {
@@ -47,32 +49,32 @@ func GetUserHandler(c *gin.Context) {
 	if err != nil {
 		msg := err.Error()
 		res := entity.Response[*entity.User]{
-			Code:   500,
+			Code:   http.StatusInternalServerError,
 			Status: "error",
 			Data:   user,
 			Error:  &msg,
 		}
-		c.JSON(500, res)
+		c.JSON(http.StatusInternalServerError, res)
 		return
 	}
 
 	if user == nil {
 		msg := "user not found"
 		res := entity.Response[*entity.User]{
-			Code:   404,
+			Code:   http.StatusNotFound,
 			Status: "error",
 			Data:   user,
 			Error:  &msg,
 		}
-		c.JSON(404, res)
+		c.JSON(http.StatusNotFound, res)
 		return
 	}
 
 	res := entity.Response[*entity.User]{
-		Code:   200,
+		Code:   http.StatusOK,
 		Status: "ok",
 		Data:   user,
 		Error:  nil,
 	}
-	c.JSON(200, res)
+	c.JSON(http.StatusOK, res)
 }
