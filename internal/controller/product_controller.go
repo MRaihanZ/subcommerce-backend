@@ -1,6 +1,8 @@
 package controller
 
 import (
+	"net/http"
+
 	"github.com/MRaihanZ/subcommerce-backend/internal/entity"
 	"github.com/MRaihanZ/subcommerce-backend/internal/model"
 	"github.com/gin-gonic/gin"
@@ -11,34 +13,34 @@ func GetProductsHandler(c *gin.Context) {
 	if err != nil {
 		msg := err.Error()
 		res := entity.Response[[]entity.ProductSummarize]{
-			Code:   500,
+			Code:   http.StatusInternalServerError,
 			Status: "error",
 			Data:   products,
 			Error:  &msg,
 		}
-		c.JSON(500, res)
+		c.JSON(http.StatusInternalServerError, res)
 		return
 	}
 
 	if products == nil {
 		msg := "no products found"
 		res := entity.Response[[]entity.ProductSummarize]{
-			Code:   404,
+			Code:   http.StatusNotFound,
 			Status: "error",
 			Data:   products,
 			Error:  &msg,
 		}
-		c.JSON(404, res)
+		c.JSON(http.StatusNotFound, res)
 		return
 	}
 
 	res := entity.Response[[]entity.ProductSummarize]{
-		Code:   200,
+		Code:   http.StatusOK,
 		Status: "ok",
 		Data:   products,
 		Error:  nil,
 	}
-	c.JSON(200, res)
+	c.JSON(http.StatusOK, res)
 }
 
 func GetProductsHotHandler(c *gin.Context) {
@@ -46,34 +48,34 @@ func GetProductsHotHandler(c *gin.Context) {
 	if err != nil {
 		msg := err.Error()
 		res := entity.Response[[]entity.ProductSummarize]{
-			Code:   500,
+			Code:   http.StatusInternalServerError,
 			Status: "error",
 			Data:   products,
 			Error:  &msg,
 		}
-		c.JSON(500, res)
+		c.JSON(http.StatusInternalServerError, res)
 		return
 	}
 
 	if products == nil {
 		msg := "no products found"
 		res := entity.Response[[]entity.ProductSummarize]{
-			Code:   404,
+			Code:   http.StatusNotFound,
 			Status: "error",
 			Data:   products,
 			Error:  &msg,
 		}
-		c.JSON(404, res)
+		c.JSON(http.StatusNotFound, res)
 		return
 	}
 
 	res := entity.Response[[]entity.ProductSummarize]{
-		Code:   200,
+		Code:   http.StatusOK,
 		Status: "ok",
 		Data:   products,
 		Error:  nil,
 	}
-	c.JSON(200, res)
+	c.JSON(http.StatusOK, res)
 }
 
 func GetProductsDiscountHandler(c *gin.Context) {
@@ -81,34 +83,34 @@ func GetProductsDiscountHandler(c *gin.Context) {
 	if err != nil {
 		msg := err.Error()
 		res := entity.Response[[]entity.ProductSummarize]{
-			Code:   500,
+			Code:   http.StatusInternalServerError,
 			Status: "error",
 			Data:   products,
 			Error:  &msg,
 		}
-		c.JSON(500, res)
+		c.JSON(http.StatusInternalServerError, res)
 		return
 	}
 
 	if products == nil {
 		msg := "no products found"
 		res := entity.Response[[]entity.ProductSummarize]{
-			Code:   404,
+			Code:   http.StatusNotFound,
 			Status: "error",
 			Data:   products,
 			Error:  &msg,
 		}
-		c.JSON(404, res)
+		c.JSON(http.StatusNotFound, res)
 		return
 	}
 
 	res := entity.Response[[]entity.ProductSummarize]{
-		Code:   200,
+		Code:   http.StatusOK,
 		Status: "ok",
 		Data:   products,
 		Error:  nil,
 	}
-	c.JSON(200, res)
+	c.JSON(http.StatusOK, res)
 }
 
 func GetProductHandler(c *gin.Context) {
@@ -117,32 +119,32 @@ func GetProductHandler(c *gin.Context) {
 	if err != nil {
 		msg := err.Error()
 		res := entity.Response[*entity.JsonProduct]{
-			Code:   500,
+			Code:   http.StatusInternalServerError,
 			Status: "error",
 			Data:   product,
 			Error:  &msg,
 		}
-		c.JSON(500, res)
+		c.JSON(http.StatusInternalServerError, res)
 		return
 	}
 
 	if product == nil {
 		msg := "product not found"
 		res := entity.Response[*entity.JsonProduct]{
-			Code:   404,
+			Code:   http.StatusNotFound,
 			Status: "error",
 			Data:   product,
 			Error:  &msg,
 		}
-		c.JSON(404, res)
+		c.JSON(http.StatusNotFound, res)
 		return
 	}
 
 	res := entity.Response[*entity.JsonProduct]{
-		Code:   200,
+		Code:   http.StatusOK,
 		Status: "ok",
 		Data:   product,
 		Error:  nil,
 	}
-	c.JSON(200, res)
+	c.JSON(http.StatusOK, res)
 }
