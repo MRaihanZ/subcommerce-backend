@@ -10,7 +10,7 @@ import (
 
 func CreateToken(c *gin.Context) {
 	token := csrf.GetToken(c)
-	c.JSON(200, gin.H{"code": http.StatusOK, "csrf_token": token, "error": nil})
+	c.JSON(http.StatusOK, gin.H{"code": http.StatusOK, "csrf_token": token, "error": nil})
 }
 
 func GetToken(c *gin.Context) {
