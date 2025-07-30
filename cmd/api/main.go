@@ -61,19 +61,24 @@ func main() {
 	// routes
 	v1 := r.Group("/api/v1")
 
-	// csrf
-	csrfRoutes := v1.Group("/csrf")
-	// generate csrf token
-	csrfRoutes.GET("/", controller.CreateToken)
-	// csrf token from session
-	csrfRoutes.GET("/session", controller.GetToken)
-
 	// auth
 	auth := v1.Group("/auth")
 	auth.POST("/login", controller.VerifyUserHandler)
 	auth.POST("/logout", controller.LogoutHandler)
 	auth.POST("/register", controller.CreateUserHandler)
 	auth.GET("/status", controller.CheckStatus)
+
+	// carts
+	// carts := v1.Group("/carts")
+	// carts.GET("/", controller.GetCartsHandler)
+	// carts.POST("/add", controller.CreateCartHandler)
+
+	// csrf
+	csrfRoutes := v1.Group("/csrf")
+	// generate csrf token
+	csrfRoutes.GET("/", controller.CreateToken)
+	// csrf token from session
+	csrfRoutes.GET("/session", controller.GetToken)
 
 	// users
 	users := v1.Group("/users")
@@ -86,10 +91,6 @@ func main() {
 	products.GET("/:id", controller.GetProductHandler)
 	products.GET("/hot", controller.GetProductsHotHandler)
 	products.GET("/discount", controller.GetProductsDiscountHandler)
-
-	// carts := v1.Group("/carts")
-	// carts.GET("/", controller.GetCartsHandler)
-	// carts.GET("/add", controller.CreateCartHandler)
 
 	// checkout
 	r.POST("")
