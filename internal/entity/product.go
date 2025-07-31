@@ -3,7 +3,7 @@ package entity
 import "time"
 
 type QueryProduct struct {
-	Id            int       `db:"id" json:"id"`
+	PId           int       `db:"p_id" json:"p_id"`
 	PName         string    `db:"p_name" json:"p_name"`
 	PiImage       string    `db:"img" json:"pi_image"`
 	Description   string    `db:"description" json:"description"`
@@ -25,7 +25,7 @@ type QueryProduct struct {
 }
 
 type JsonProduct struct {
-	Id              int              `db:"id" json:"id"`
+	PId             int              `db:"p_id" json:"p_id"`
 	PName           string           `db:"p_name" json:"p_name"`
 	PiImages        []ProductImage   `json:"images"`
 	Description     string           `db:"description" json:"description"`
@@ -55,7 +55,7 @@ type ProductVariant struct {
 }
 
 type ProductSummarize struct {
-	Id            int     `db:"id" json:"id"`
+	PId           int     `db:"p_id" json:"p_id"`
 	PName         string  `db:"p_name" json:"p_name"`
 	PvId          string  `db:"pv_id" json:"pv_id"`
 	PvName        string  `db:"pv_name" json:"pv_name"`
