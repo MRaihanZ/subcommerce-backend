@@ -7,7 +7,8 @@ import (
 
 func GetAllProductsSummarize() ([]entity.ProductSummarize, error) {
 	var products []entity.ProductSummarize
-	err := db.DB.Select(&products, `SELECT p.id, p.name, p.sold, p.average_rating, s.name AS seller_name, pi.img, pv.id AS pv_id, pv.name AS pv_name, pv.price, pv.discount FROM products p 
+	err := db.DB.Select(&products, `SELECT p.id, p.name AS p_name, p.sold, p.average_rating, s.name AS seller_name, pi.img, pv.id AS pv_id, pv.name AS pv_name, pv.price, pv.discount
+						FROM products p 
 						JOIN sellers s ON p.seller_id = s.id
 						JOIN LATERAL (SELECT pi.img FROM product_images pi WHERE pi.product_id = p.id LIMIT 1) pi ON true
 						JOIN LATERAL (SELECT pv.id, pv.name, pv.price, pv.discount FROM product_variants pv WHERE pv.product_id = p.id LIMIT 1) pv ON true
@@ -25,7 +26,8 @@ func GetAllProductsSummarize() ([]entity.ProductSummarize, error) {
 
 func GetAllProductsHotSummarize() ([]entity.ProductSummarize, error) {
 	var products []entity.ProductSummarize
-	err := db.DB.Select(&products, `SELECT p.id, p.name, p.sold, p.average_rating, s.name AS seller_name, pi.img, pv.id AS pv_id, pv.name AS pv_name, pv.price, pv.discount FROM products p 
+	err := db.DB.Select(&products, `SELECT p.id, p.name AS p_name, p.sold, p.average_rating, s.name AS seller_name, pi.img, pv.id AS pv_id, pv.name AS pv_name, pv.price, pv.discount
+						FROM products p 
 						JOIN sellers s ON p.seller_id = s.id
 						JOIN LATERAL (SELECT pi.img FROM product_images pi WHERE pi.product_id = p.id LIMIT 1) pi ON true
 						JOIN LATERAL (SELECT pv.id, pv.name, pv.price, pv.discount FROM product_variants pv 
@@ -44,7 +46,8 @@ func GetAllProductsHotSummarize() ([]entity.ProductSummarize, error) {
 
 func GetAllProductsDiscountSummarize() ([]entity.ProductSummarize, error) {
 	var products []entity.ProductSummarize
-	err := db.DB.Select(&products, `SELECT p.id, p.name, p.sold, p.average_rating, s.name AS seller_name, pi.img, pv.id AS pv_id, pv.name AS pv_name, pv.price, pv.discount FROM products p 
+	err := db.DB.Select(&products, `SELECT p.id, p.name AS p_name, p.sold, p.average_rating, s.name AS seller_name, pi.img, pv.id AS pv_id, pv.name AS pv_name, pv.price, pv.discount
+						FROM products p 
 						JOIN sellers s ON p.seller_id = s.id
 						JOIN LATERAL (SELECT pi.img FROM product_images pi WHERE pi.product_id = p.id LIMIT 1) pi ON true
 						JOIN LATERAL (SELECT pv.id, pv.name, pv.price, pv.discount FROM product_variants pv WHERE pv.product_id = p.id ORDER BY pv.discount DESC LIMIT 1) pv ON true
@@ -63,7 +66,7 @@ func GetAllProductsDiscountSummarize() ([]entity.ProductSummarize, error) {
 
 func GetProductById(id string) (*entity.JsonProduct, error) {
 	var products []entity.QueryProduct
-	err := db.DB.Select(&products, `SELECT p.id, p.name, p.description, p.sold, p.average_rating, p.rating_count, p.created_at, pi.img, 
+	err := db.DB.Select(&products, `SELECT p.id, p.name AS p_name, p.description, p.sold, p.average_rating, p.rating_count, p.created_at, pi.img, 
 					i.code, i.name AS i_name, pv.id AS pv_id, pv.is_default, pv.name AS pv_name, pv.interval, pv.stock, pv.sold AS pv_sold,
 					pv.price, pv.discount, pv.min_order FROM products p
 					JOIN product_images pi ON pi.product_id = p.id
@@ -81,7 +84,7 @@ func GetProductById(id string) (*entity.JsonProduct, error) {
 
 	productsMap := &entity.JsonProduct{
 		Id:            products[0].Id,
-		Name:          products[0].Name,
+		PName:         products[0].PName,
 		Description:   products[0].Description,
 		Sold:          products[0].Sold,
 		AverageRating: products[0].AverageRating,

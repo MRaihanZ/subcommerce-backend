@@ -4,7 +4,7 @@ import "time"
 
 type QueryProduct struct {
 	Id            int       `db:"id" json:"id"`
-	Name          string    `db:"name" json:"name"`
+	PName         string    `db:"p_name" json:"p_name"`
 	PiImage       string    `db:"img" json:"pi_image"`
 	Description   string    `db:"description" json:"description"`
 	Sold          int       `db:"sold" json:"sold"`
@@ -26,7 +26,7 @@ type QueryProduct struct {
 
 type JsonProduct struct {
 	Id              int              `db:"id" json:"id"`
-	Name            string           `db:"name" json:"name"`
+	PName           string           `db:"p_name" json:"p_name"`
 	PiImages        []ProductImage   `json:"images"`
 	Description     string           `db:"description" json:"description"`
 	Sold            int              `db:"sold" json:"sold"`
@@ -56,7 +56,7 @@ type ProductVariant struct {
 
 type ProductSummarize struct {
 	Id            int     `db:"id" json:"id"`
-	Name          string  `db:"name" json:"name"`
+	PName         string  `db:"p_name" json:"p_name"`
 	PvId          string  `db:"pv_id" json:"pv_id"`
 	PvName        string  `db:"pv_name" json:"pv_name"`
 	Image         string  `db:"img" json:"img"`
