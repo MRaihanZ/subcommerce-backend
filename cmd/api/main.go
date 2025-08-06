@@ -69,9 +69,12 @@ func main() {
 	auth.GET("/status", controller.CheckStatus)
 
 	// carts
-	// carts := v1.Group("/carts")
-	// carts.GET("/", controller.GetCartsHandler)
-	// carts.POST("/add", controller.CreateCartHandler)
+	carts := v1.Group("/carts")
+	carts.GET("/", controller.GetCartsHandler)
+	carts.POST("/", controller.CreateCartHandler)
+	carts.PATCH("/", controller.UpdateCartHandler)
+	carts.DELETE("/", controller.DeleteCartsHandler)
+	carts.DELETE("/product", controller.DeleteCartHandler)
 
 	// csrf
 	csrfRoutes := v1.Group("/csrf")
@@ -91,6 +94,10 @@ func main() {
 	products.GET("/:id", controller.GetProductHandler)
 	products.GET("/hot", controller.GetProductsHotHandler)
 	products.GET("/discount", controller.GetProductsDiscountHandler)
+
+	// sellers
+	// sellers := v1.Group("/sellers")
+	// sellers.GET("/", controller.)
 
 	// checkout
 	r.POST("")
