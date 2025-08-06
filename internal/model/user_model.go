@@ -3,7 +3,6 @@ package model
 import (
 	"database/sql"
 	"errors"
-	"log"
 
 	"github.com/MRaihanZ/subcommerce-backend/internal/db"
 	"github.com/MRaihanZ/subcommerce-backend/internal/entity"
@@ -13,12 +12,10 @@ func GetAllUsers() ([]entity.User, error) {
 	var users []entity.User
 	err := db.DB.Select(&users, "SELECT * FROM users")
 	if err != nil {
-		log.Println("ERROR")
 		return nil, err
 	}
 
 	if len(users) == 0 {
-		log.Println("NO DATA")
 		return nil, nil
 	}
 
