@@ -77,11 +77,14 @@ func sellers() {
 	}
 
 	sold_products := []int{234, 167, 180, 199, 241}
+	average_rating := []float32{4.799, 3.872, 3.117, 4.929, 4.243}
+	rating_total := []int{190, 50, 70, 445, 290}
+	rating_count := []int{100, 32, 30, 89, 59}
 	for i, v := range users {
 		id = uuid.New()
-		_, err := DB.Exec(`INSERT INTO sellers (id, user_id, name, address, sold_products)
-		VALUES ($1, $2, $3, $4, $5)`,
-			id, v, gofakeit.Name(), gofakeit.Address().Address, sold_products[i])
+		_, err := DB.Exec(`INSERT INTO sellers (id, user_id, name, address, sold_products, average_rating, rating_total, rating_count)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+			id, v, gofakeit.Name(), gofakeit.Address().Address, sold_products[i], average_rating[i], rating_total[i], rating_count[i])
 		if err != nil {
 			log.Println("insert error: ", err)
 		}
@@ -257,6 +260,43 @@ func ratings() {
 	log.Println("=== Complete ===")
 }
 
+func checkout_statuses() {
+	fmt.Println("")
+	log.Println("+++ Seeding checkout statuses table +++")
+	_, err := DB.Exec(`INSERT INTO checkout_statuses (name)
+		VALUES ('menunggu pembayaran'),
+		('pembayaran dibatalkan'),
+		('batas waktu pembayaran habis'),
+		('menunggu konfirmasi seller'),
+		('dibatalkan seller'),
+		('dibatalkan pengguna'),
+		('produk sedang disiapkan'),
+		('produk sudah dikirim'),
+		('produk tidak diterima'),
+		('pesanan selesai')`)
+	if err != nil {
+		log.Println("insert error: ", err)
+	}
+	log.Println("=== Complete ===")
+}
+
+func payments() {
+	fmt.Println("")
+	log.Println("+++ Seeding checkout statuses table +++")
+	_, err := DB.Exec(`INSERT INTO checkout_statuses (name)
+		VALUES 
+		('Qris', '
+	/assets/svg/payments_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg'),
+		('Transfer Mandiri', '
+	/assets/svg/payments_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg'),
+		('pembayaran dibatalkan', '
+	/assets/svg/payments_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg')`)
+	if err != nil {
+		log.Println("insert error: ", err)
+	}
+	log.Println("=== Complete ===")
+}
+
 func main() {
 	users()
 	sellers()
@@ -266,4 +306,5 @@ func main() {
 	product_variants()
 	product_images()
 	ratings()
+	checkout_statuses()
 }
