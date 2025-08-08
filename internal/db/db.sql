@@ -24,7 +24,7 @@ CREATE TABLE
         name VARCHAR(50) NOT NULL,
         img TEXT DEFAULT '/assets/img/profile1.jpg' NOT NULL,
         address TEXT NOT NULL,
-        sold_products BIGINT DEFAULT 0 NOT NULL,
+        sold_products INT DEFAULT 0 NOT NULL,
         average_rating NUMERIC(4, 3) DEFAULT 0 NOT NULL,
         rating_total INT DEFAULT 0 NOT NULL,
         rating_count INT DEFAULT 0 NOT NULL,
