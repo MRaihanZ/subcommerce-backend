@@ -25,6 +25,9 @@ CREATE TABLE
         img TEXT DEFAULT '/assets/img/profile1.jpg' NOT NULL,
         address TEXT NOT NULL,
         sold_products BIGINT DEFAULT 0 NOT NULL,
+        average_rating NUMERIC(4, 3) DEFAULT 0 NOT NULL,
+        rating_total INT DEFAULT 0 NOT NULL,
+        rating_count INT DEFAULT 0 NOT NULL,
         created_at TIMESTAMP DEFAULT NOW () NOT NULL
     );
 
@@ -107,29 +110,52 @@ CREATE TABLE
 CREATE TABLE
     payments (
         id SERIAL PRIMARY KEY,
+        category_payment_id INT CONSTRAINT fk_py_category_payment_id REFERENCES category_payments (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
         name VARCHAR(50) NOT NULL,
         img TEXT NOT NULL
     );
 
+-- instant --
+-- 1. Qris
+-- e-money --
+-- 2. GoPay
+-- 3. DANA
+-- 4. OVO
+-- virtual account --
+-- 5. Mandiri
+-- 6. BSI
+-- 7. BRI
+-- 8. BCA
+-- 9. BNI
+-- 10. Permata
+CREATE TABLE
+    category_payments (id SERIAL PRIMARY KEY, name VARCHAR(50) NOT NULL,);
+
+-- 1. instant
+-- 2. e-money
+-- 3. virtual account
 CREATE TABLE
     checkout_statuses (id SERIAL PRIMARY KEY, name VARCHAR(30) NOT NULL);
 
+-- 1. menunggu pembayaran
+-- 2. pembayaran dibatalkan
+-- 3. batas waktu pembayaran habis
+-- 4. menunggu konfirmasi seller
+-- 5. dibatalkan seller
+-- 6. dibatalkan pengguna
+-- 7. produk sedang disiapkan
+-- 8. produk sudah dikirim
+-- 9. produk tidak diterima
+-- 10. pesanan selesai
 CREATE TABLE
     checkouts (
         id SERIAL PRIMARY KEY,
         user_id UUID CONSTRAINT fk_ch_user_id REFERENCES users (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
         payment_id INT CONSTRAINT fk_ch_payment_id REFERENCES payments (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
         checkout_status_id INT CONSTRAINT fk_ch_checkout_status_id REFERENCES checkout_statuses (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
-        created_at TIMESTAMP DEFAULT NOW () NOT NULL
-    );
-
-CREATE TABLE
-    checkout_products (
-        id SERIAL PRIMARY KEY,
-        checkout_id INT CONSTRAINT fk_cp_checkout_id REFERENCES checkouts (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
         product_id INT CONSTRAINT fk_cp_product_id REFERENCES products (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
         product_variant_id INT CONSTRAINT fk_cp_product_variant_id REFERENCES product_variants (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
-        CONSTRAINT uq_cp_checkout_product_product_variant UNIQUE (checkout_id, product_id, product_variant_id),
+        CONSTRAINT uq_ch_checkout_product_product_variant UNIQUE (id, product_id, product_variant_id),
         note VARCHAR(100),
         quantity SMALLINT DEFAULT 1 NOT NULL,
         unit_price BIGINT NOT NULL,
