@@ -96,8 +96,9 @@ func main() {
 	products.GET("/discount", controller.GetProductsDiscountHandler)
 
 	// sellers
-	// sellers := v1.Group("/sellers")
-	// sellers.GET("/", controller.)
+	sellers := v1.Group("/sellers")
+	sellers.GET("/:id", controller.GetSeller)
+	sellers.GET("/:id/summarize", controller.GetSellerSummarize)
 
 	// checkout
 	r.POST("")
