@@ -109,6 +109,5 @@ func main() {
 	// users.PATCH("/", controller.UpdateUserHandler)
 	// users.DELETE("/", controller.DeleteUserHandler)
 
-	r.POST("")
-	r.Run(":8080")
+	r.Run(os.Getenv("APP_PORT"))
 }
