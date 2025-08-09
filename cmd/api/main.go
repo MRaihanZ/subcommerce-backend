@@ -105,8 +105,9 @@ func main() {
 
 	// users
 	users := v1.Group("/users")
-	users.GET("/", controller.GetUsersHandler)
-	users.GET("/:id", controller.GetUserHandler)
+	users.GET("/", controller.GetUserHandler)
+	// users.PATCH("/", controller.UpdateUserHandler)
+	// users.DELETE("/", controller.DeleteUserHandler)
 
 	r.POST("")
 	r.Run(":8080")
