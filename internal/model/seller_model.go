@@ -8,9 +8,27 @@ import (
 	"github.com/MRaihanZ/subcommerce-backend/internal/entity"
 )
 
-func GetSellerById(id string) (*entity.SellerSummarize, error) {
+func GetSellerById(id interface{}) (*entity.Seller, error) {
+	var seller entity.Seller
+	err := db.DB.Get(&seller, `SELECT id, name, img, address, sold_products,
+	average_rating, rating_total, rating_count, created_at
+	FROM sellers WHERE id =  $1`, id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &seller, nil
+}
+
+func GetSellerByIdSummarize(id int) (*entity.SellerSummarize, error) {
 	var seller entity.SellerSummarize
-	err := db.DB.Get(&seller, "SELECT id, img, sold_products, average_rating FROM sellers WHERE id = $1", id)
+	err := db.DB.Get(&seller, `SELECT s.id, s.name, s.img, s.sold_products, s.average_rating 
+	FROM sellers s
+	JOIN products p ON p.seller_id = s.id
+	WHERE p.id = $1`, id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
