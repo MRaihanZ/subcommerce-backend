@@ -239,6 +239,7 @@ func ratings() {
 	}
 
 	var users []string
+	var user string
 	err = DB.Select(&users, "SELECT id FROM users")
 	if err != nil {
 		log.Fatalf("Failed to fetch users: %v", err)
@@ -247,12 +248,13 @@ func ratings() {
 	ratings := []int{1, 2, 3, 4, 5}
 	var rating int
 
-	for i, p := range products {
+	for _, p := range products {
 		for _, pv := range product_variants {
 			rating = gofakeit.RandomInt(ratings)
+			user = gofakeit.RandomString(users)
 			_, err := DB.Exec(`INSERT INTO ratings (product_id, product_variant_id, user_id, rating, comment)
 		VALUES ($1, $2, $3, $4, $5)`,
-				p, pv, users[i], rating, gofakeit.Comment())
+				p, pv, user, rating, gofakeit.Comment())
 			if err != nil {
 				log.Println("insert error: ", err)
 			}
