@@ -66,7 +66,10 @@ func main() {
 	auth.POST("/login", controller.VerifyUserHandler)
 	auth.POST("/logout", controller.LogoutHandler)
 	auth.POST("/register", controller.CreateUserHandler)
-	auth.GET("/status", controller.CheckStatus)
+	// auth.POST("/verification/seller", controller.VerificationSellerHandler)
+	// auth.POST("/status/seller", controller.CheckStatusSellerHandler)
+	// auth.POST("/register/seller", controller.CreateSellerHandler)
+	auth.GET("/status", controller.CheckStatusHandler)
 
 	// carts
 	carts := v1.Group("/carts")
@@ -83,11 +86,6 @@ func main() {
 	// csrf token from session
 	csrfRoutes.GET("/session", controller.GetToken)
 
-	// users
-	users := v1.Group("/users")
-	users.GET("/", controller.GetUsersHandler)
-	users.GET("/:id", controller.GetUserHandler)
-
 	// products
 	products := v1.Group("/products")
 	products.GET("/", controller.GetProductsHandler)
@@ -95,12 +93,21 @@ func main() {
 	products.GET("/hot", controller.GetProductsHotHandler)
 	products.GET("/discount", controller.GetProductsDiscountHandler)
 
+	// ratings
+	ratings := v1.Group("/ratings")
+	ratings.GET("/:product_id", controller.GetRatingHandler)
+	ratings.GET("/comments/:product_id", controller.GetRatingCommentsHandler)
+
 	// sellers
 	sellers := v1.Group("/sellers")
-	sellers.GET("/:id", controller.GetSeller)
-	sellers.GET("/:id/summarize", controller.GetSellerSummarize)
+	sellers.GET("/", controller.GetSeller)
+	sellers.GET("/:product_id/summarize", controller.GetSellerSummarize)
 
-	// checkout
+	// users
+	users := v1.Group("/users")
+	users.GET("/", controller.GetUsersHandler)
+	users.GET("/:id", controller.GetUserHandler)
+
 	r.POST("")
 	r.Run(":8080")
 }
