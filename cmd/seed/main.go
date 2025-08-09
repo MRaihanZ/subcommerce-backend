@@ -245,10 +245,11 @@ func ratings() {
 	}
 
 	ratings := []int{1, 2, 3, 4, 5}
-	rating := gofakeit.RandomInt(ratings)
+	var rating int
 
 	for i, p := range products {
 		for _, pv := range product_variants {
+			rating = gofakeit.RandomInt(ratings)
 			_, err := DB.Exec(`INSERT INTO ratings (product_id, product_variant_id, user_id, rating, comment)
 		VALUES ($1, $2, $3, $4, $5)`,
 				p, pv, users[i], rating, gofakeit.Comment())
