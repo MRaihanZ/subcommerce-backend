@@ -39,3 +39,16 @@ func GetUserByEmail(email string) (*entity.SignIn, error) {
 
 	return &signIn, nil
 }
+
+func GetSellerByEmail(id string) (*string, error) {
+	var signIn string
+	err := db.DB.Get(&signIn, "SELECT id FROM sellers WHERE user_id = $1", id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &signIn, nil
+}

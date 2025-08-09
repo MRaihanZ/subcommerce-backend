@@ -16,10 +16,10 @@ func CreateUserHandler(c *gin.Context) {
 	var req entity.SignUp
 	if err := c.BindJSON(&req); err != nil {
 		msg := err.Error()
-		res := entity.Response[entity.SignUp]{
+		res := entity.Response[error]{
 			Code:   http.StatusBadRequest,
 			Status: "error",
-			Data:   req,
+			Data:   nil,
 			Error:  &msg,
 		}
 		c.JSON(http.StatusBadRequest, res)
@@ -28,7 +28,7 @@ func CreateUserHandler(c *gin.Context) {
 	user, err := model.CreateUser(req.Name, req.Email, req.Dob, req.Password)
 	if err != nil {
 		msg := err.Error()
-		res := entity.Response[*uuid.UUID]{
+		res := entity.Response[error]{
 			Code:   http.StatusInternalServerError,
 			Status: "error",
 			Data:   nil,
@@ -51,10 +51,10 @@ func VerifyUserHandler(c *gin.Context) {
 	var req entity.SignIn
 	if err := c.BindJSON(&req); err != nil {
 		msg := err.Error()
-		res := entity.Response[entity.SignIn]{
+		res := entity.Response[error]{
 			Code:   http.StatusBadRequest,
 			Status: "error",
-			Data:   req,
+			Data:   nil,
 			Error:  &msg,
 		}
 		c.JSON(http.StatusBadRequest, res)
@@ -66,7 +66,7 @@ func VerifyUserHandler(c *gin.Context) {
 	user, err := model.GetUserByEmail(req.Email)
 	if err != nil {
 		msg := err.Error()
-		res := entity.Response[*entity.SignIn]{
+		res := entity.Response[error]{
 			Code:   http.StatusInternalServerError,
 			Status: "error",
 			Data:   nil,
@@ -78,7 +78,7 @@ func VerifyUserHandler(c *gin.Context) {
 
 	if user == nil {
 		msg := "user not found"
-		res := entity.Response[*entity.SignIn]{
+		res := entity.Response[error]{
 			Code:   http.StatusNotFound,
 			Status: "error",
 			Data:   nil,
@@ -90,7 +90,7 @@ func VerifyUserHandler(c *gin.Context) {
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
 		msg := err.Error()
-		res := entity.Response[*entity.SignIn]{
+		res := entity.Response[error]{
 			Code:   http.StatusUnauthorized,
 			Status: "error",
 			Data:   nil,
@@ -100,14 +100,10 @@ func VerifyUserHandler(c *gin.Context) {
 		return
 	}
 
-	// save session
-	session := sessions.Default(c)
-	session.Set("user_id", user.Id)
-	session.Set("csrf_token", csrfToken)
-	session.Set("is_logged_in", true)
-	if err := session.Save(); err != nil {
-		msg := "Failed to save session | " + err.Error()
-		res := entity.Response[*entity.SignIn]{
+	seller, err := model.GetSellerByEmail(req.Id)
+	if err != nil {
+		msg := err.Error()
+		res := entity.Response[error]{
 			Code:   http.StatusInternalServerError,
 			Status: "error",
 			Data:   nil,
@@ -115,6 +111,41 @@ func VerifyUserHandler(c *gin.Context) {
 		}
 		c.JSON(http.StatusInternalServerError, res)
 		return
+	}
+
+	if seller == nil {
+		session := sessions.Default(c)
+		session.Set("user_id", user.Id)
+		session.Set("csrf_token", csrfToken)
+		session.Set("is_logged_in", true)
+		if err := session.Save(); err != nil {
+			msg := "Failed to save session | " + err.Error()
+			res := entity.Response[*entity.SignIn]{
+				Code:   http.StatusInternalServerError,
+				Status: "error",
+				Data:   nil,
+				Error:  &msg,
+			}
+			c.JSON(http.StatusInternalServerError, res)
+			return
+		}
+	} else {
+		session := sessions.Default(c)
+		session.Set("user_id", user.Id)
+		session.Set("seller_id", seller)
+		session.Set("csrf_token", csrfToken)
+		session.Set("is_logged_in", true)
+		if err := session.Save(); err != nil {
+			msg := "Failed to save session | " + err.Error()
+			res := entity.Response[*entity.SignIn]{
+				Code:   http.StatusInternalServerError,
+				Status: "error",
+				Data:   nil,
+				Error:  &msg,
+			}
+			c.JSON(http.StatusInternalServerError, res)
+			return
+		}
 	}
 
 	res := entity.Response[*entity.SignIn]{
@@ -126,7 +157,7 @@ func VerifyUserHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, res)
 }
 
-func CheckStatus(c *gin.Context) {
+func CheckStatusHandler(c *gin.Context) {
 	session := sessions.Default(c)
 	id := session.Get("user_id")
 	if id == nil {
