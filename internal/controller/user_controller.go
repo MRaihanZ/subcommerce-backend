@@ -9,41 +9,6 @@ import (
 	"github.com/google/uuid"
 )
 
-func GetUsersHandler(c *gin.Context) {
-	users, err := model.GetAllUsers()
-	if err != nil {
-		msg := err.Error()
-		res := entity.Response[[]entity.User]{
-			Code:   http.StatusInternalServerError,
-			Status: "error",
-			Data:   users,
-			Error:  &msg,
-		}
-		c.JSON(http.StatusInternalServerError, res)
-		return
-	}
-
-	if users == nil {
-		msg := "no user found"
-		res := entity.Response[[]entity.User]{
-			Code:   http.StatusNotFound,
-			Status: "error",
-			Data:   users,
-			Error:  &msg,
-		}
-		c.JSON(http.StatusNotFound, res)
-		return
-	}
-
-	res := entity.Response[[]entity.User]{
-		Code:   http.StatusOK,
-		Status: "ok",
-		Data:   users,
-		Error:  nil,
-	}
-	c.JSON(http.StatusOK, res)
-}
-
 func GetUserHandler(c *gin.Context) {
 	id := c.Param("id")
 	if _, err := uuid.Parse(id); err != nil {
