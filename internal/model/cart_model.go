@@ -102,7 +102,7 @@ func UpdateCart(id interface{}, productId int, productVariantId int, quantity in
 	FROM product_variants pv
 	WHERE c.user_id = $1 AND c.product_id = $2 AND c.product_variant_id = $3
 	AND pv.id = c.product_variant_id AND $4 <= pv.stock
-	RETURNING c.id`, id, productId, productVariantId, quantity).Scan(&returnId)
+	RETURNING pv.product_id`, id, productId, productVariantId, quantity).Scan(&returnId)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, errs.ErrNotEnoughStock
