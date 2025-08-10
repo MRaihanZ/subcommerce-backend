@@ -1,14 +1,12 @@
 package controller
 
 import (
-	"log"
 	"net/http"
 
 	"github.com/MRaihanZ/subcommerce-backend/internal/entity"
 	"github.com/MRaihanZ/subcommerce-backend/internal/model"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -38,7 +36,37 @@ func CreateUserHandler(c *gin.Context) {
 		return
 	}
 
-	res := entity.Response[*uuid.UUID]{
+	if user == nil {
+		msg := "email sudah terdaftar"
+		res := entity.Response[error]{
+			Code:   http.StatusConflict,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusConflict, res)
+		return
+	}
+
+	csrfToken := c.GetHeader("X-CSRF-TOKEN")
+
+	session := sessions.Default(c)
+	session.Set("user_id", user)
+	session.Set("csrf_token", csrfToken)
+	session.Set("is_logged_in", true)
+	if err := session.Save(); err != nil {
+		msg := "Failed to save session | " + err.Error()
+		res := entity.Response[*entity.SignIn]{
+			Code:   http.StatusInternalServerError,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusInternalServerError, res)
+		return
+	}
+
+	res := entity.Response[*string]{
 		Code:   http.StatusOK,
 		Status: "ok",
 		Data:   user,
@@ -100,7 +128,7 @@ func VerifyUserHandler(c *gin.Context) {
 		return
 	}
 
-	seller, err := model.GetSellerByEmail(req.Id)
+	seller, err := model.GetSellerByEmail(user.Id)
 	if err != nil {
 		msg := err.Error()
 		res := entity.Response[error]{
@@ -183,11 +211,8 @@ func CheckStatusHandler(c *gin.Context) {
 }
 
 func LogoutHandler(c *gin.Context) {
-	log.Println("Logout Called")
 	session := sessions.Default(c)
-	log.Println("session Called")
 	session.Clear()
-	log.Println("clear Called")
 	session.Options(sessions.Options{
 		Path:     "/",
 		MaxAge:   -1,
@@ -195,7 +220,6 @@ func LogoutHandler(c *gin.Context) {
 		Secure:   false, // set true if using HTTPS
 		SameSite: http.SameSiteLaxMode,
 	})
-	log.Println("option Called")
 	if err := session.Save(); err != nil {
 		msg := "Failed to save session | " + err.Error()
 		res := entity.Response[*entity.SignIn]{
@@ -207,7 +231,6 @@ func LogoutHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, res)
 		return
 	}
-	log.Println("save Called")
 
 	res := entity.Response[string]{
 		Code:   http.StatusOK,
