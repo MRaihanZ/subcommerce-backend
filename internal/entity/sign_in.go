@@ -1,7 +1,7 @@
 package entity
 
 type SignIn struct {
-	Id       string `json:"id"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Id       string `db:"id" json:"id"`
+	Email    string `db:"email" json:"email"`
+	Password string `db:"password" json:"password"`
 }
