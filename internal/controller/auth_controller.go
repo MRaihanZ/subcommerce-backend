@@ -146,6 +146,7 @@ func VerifyUserHandler(c *gin.Context) {
 		session.Set("user_id", user.Id)
 		session.Set("csrf_token", csrfToken)
 		session.Set("is_logged_in", true)
+		session.Set("is_seller", false)
 		if err := session.Save(); err != nil {
 			msg := "Failed to save session | " + err.Error()
 			res := entity.Response[*entity.SignIn]{
@@ -163,6 +164,7 @@ func VerifyUserHandler(c *gin.Context) {
 		session.Set("seller_id", seller)
 		session.Set("csrf_token", csrfToken)
 		session.Set("is_logged_in", true)
+		session.Set("is_seller", true)
 		if err := session.Save(); err != nil {
 			msg := "Failed to save session | " + err.Error()
 			res := entity.Response[*entity.SignIn]{
