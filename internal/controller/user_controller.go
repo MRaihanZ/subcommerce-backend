@@ -5,23 +5,25 @@ import (
 
 	"github.com/MRaihanZ/subcommerce-backend/internal/entity"
 	"github.com/MRaihanZ/subcommerce-backend/internal/model"
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 )
 
 func GetUserHandler(c *gin.Context) {
-	id := c.Param("id")
-	if _, err := uuid.Parse(id); err != nil {
-		msg := "format seller ID salah"
-		res := entity.Response[*error]{
-			Code:   http.StatusBadRequest,
+	session := sessions.Default(c)
+	id := session.Get("user_id")
+	if id == nil {
+		msg := "id null"
+		res := entity.Response[error]{
+			Code:   http.StatusUnauthorized,
 			Status: "error",
 			Data:   nil,
 			Error:  &msg,
 		}
-		c.JSON(http.StatusBadRequest, res)
+		c.JSON(http.StatusUnauthorized, res)
 		return
 	}
+
 	user, err := model.GetUserById(id)
 	if err != nil {
 		msg := err.Error()
