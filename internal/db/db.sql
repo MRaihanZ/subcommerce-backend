@@ -108,6 +108,12 @@ CREATE TABLE
     );
 
 CREATE TABLE
+    category_payments (id SERIAL PRIMARY KEY, name VARCHAR(50) NOT NULL);
+
+-- 1. instant
+-- 2. e-money
+-- 3. virtual account
+CREATE TABLE
     payments (
         id SERIAL PRIMARY KEY,
         category_payment_id INT CONSTRAINT fk_py_category_payment_id REFERENCES category_payments (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
@@ -128,12 +134,7 @@ CREATE TABLE
 -- 8. BCA
 -- 9. BNI
 -- 10. Permata
-CREATE TABLE
-    category_payments (id SERIAL PRIMARY KEY, name VARCHAR(50) NOT NULL,);
 
--- 1. instant
--- 2. e-money
--- 3. virtual account
 CREATE TABLE
     checkout_statuses (id SERIAL PRIMARY KEY, name VARCHAR(30) NOT NULL);
 
