@@ -1,5 +1,7 @@
 package entity
 
+import "time"
+
 type User struct {
 	Name      string `db:"name" json:"name"`
 	Img       string `db:"img" json:"img"`
@@ -9,9 +11,9 @@ type User struct {
 }
 
 type UpdateUser struct {
-	Name     string `form:"name" json:"name"`
-	Img      string `form:"img" json:"img"`
-	Email    string `form:"email" json:"email"`
-	Dob      string `form:"dob" json:"dob"`
-	Password string `form:"password" json:"password"`
+	Name     string    `form:"name"`
+	ImgPath  string    `form:"imgPath"`
+	Email    string    `form:"email"`
+	Dob      time.Time `form:"dob" time_format:"2006-01-02"`
+	Password string    `form:"password"`
 }
