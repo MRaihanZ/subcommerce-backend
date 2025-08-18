@@ -1,9 +1,11 @@
 package controller
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/MRaihanZ/subcommerce-backend/internal/entity"
+	"github.com/MRaihanZ/subcommerce-backend/internal/errs"
 	"github.com/MRaihanZ/subcommerce-backend/internal/model"
 	"github.com/MRaihanZ/subcommerce-backend/internal/service"
 	"github.com/gin-contrib/sessions"
@@ -156,4 +158,75 @@ func UpdateUserHandler(c *gin.Context) {
 		}
 		c.JSON(http.StatusOK, res)
 	}
+}
+
+func DeleteUserHandler(c *gin.Context) {
+	session := sessions.Default(c)
+	id := session.Get("user_id")
+	if id == nil {
+		msg := "id null"
+		res := entity.Response[error]{
+			Code:   http.StatusUnauthorized,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusUnauthorized, res)
+		return
+	}
+
+	deleteImg, err := service.DeleteProfile(id)
+	if err != nil {
+		msg := err.Error()
+		res := entity.Response[error]{
+			Code:   http.StatusInternalServerError,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusInternalServerError, res)
+		return
+	}
+
+	if deleteImg == nil {
+		msg := "user tidak ditemukan"
+		res := entity.Response[error]{
+			Code:   http.StatusInternalServerError,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusInternalServerError, res)
+		return
+	}
+
+	userName, err := model.DeleteUser(id)
+	if err != nil {
+		var code int
+		var msg string
+		switch {
+		case errors.Is(err, errs.ErrNoCartProduct):
+			code = http.StatusNotFound
+			msg = err.Error()
+		default:
+			code = http.StatusInternalServerError
+			msg = "internal server error"
+		}
+		res := entity.Response[error]{
+			Code:   code,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(code, res)
+		return
+	}
+
+	res := entity.Response[*string]{
+		Code:   http.StatusOK,
+		Status: "ok",
+		Data:   userName,
+		Error:  nil,
+	}
+	c.JSON(http.StatusOK, res)
 }

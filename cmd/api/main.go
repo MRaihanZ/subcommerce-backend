@@ -107,7 +107,7 @@ func main() {
 	users := v1.Group("/users")
 	users.GET("/", controller.GetUserHandler)
 	users.PATCH("/", controller.UpdateUserHandler)
-	// users.DELETE("/", controller.DeleteUserHandler)
+	users.DELETE("/", controller.DeleteUserHandler)
 
 	r.Run(os.Getenv("APP_PORT"))
 }
