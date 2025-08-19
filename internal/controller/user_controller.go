@@ -222,6 +222,26 @@ func DeleteUserHandler(c *gin.Context) {
 		return
 	}
 
+	session.Clear()
+	session.Options(sessions.Options{
+		Path:     "/",
+		MaxAge:   -1,
+		HttpOnly: true,
+		Secure:   false, // set true if using HTTPS
+		SameSite: http.SameSiteLaxMode,
+	})
+	if err := session.Save(); err != nil {
+		msg := "Failed to save session | " + err.Error()
+		res := entity.Response[*entity.SignIn]{
+			Code:   http.StatusInternalServerError,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusInternalServerError, res)
+		return
+	}
+
 	res := entity.Response[*string]{
 		Code:   http.StatusOK,
 		Status: "ok",
