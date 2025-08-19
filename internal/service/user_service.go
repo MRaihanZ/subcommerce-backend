@@ -45,6 +45,13 @@ func DeleteProfile(id interface{}) (*string, error) {
 		return nil, nil
 	}
 
+	var defaultPath = "/assets/img/profile2.jpg"
+
+	if *filePath == defaultPath {
+		var is_default = "default"
+		return &is_default, nil
+	}
+
 	fullPath := filepath.Join(os.Getenv("PROFILE_UPLOAD_PATH"), *filePath)
 	if err := os.Remove(fullPath); err != nil {
 		return nil, err
