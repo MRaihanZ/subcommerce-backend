@@ -1,0 +1,302 @@
+-- Create table
+CREATE TABLE
+    order_statuses (id SERIAL PRIMARY KEY, name VARCHAR(30) NOT NULL);
+	
+CREATE TABLE
+    orders (
+        id SERIAL PRIMARY KEY,
+        user_id UUID CONSTRAINT fk_or_user_id REFERENCES users (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
+        payment_id INT CONSTRAINT fk_or_payment_id REFERENCES payments (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
+        order_status_id INT CONSTRAINT fk_or_order_status_id REFERENCES order_statuses (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
+        product_id INT CONSTRAINT fk_or_product_id REFERENCES products (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
+        product_variant_id INT CONSTRAINT fk_or_product_variant_id REFERENCES product_variants (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
+        CONSTRAINT uq_or_order_product_product_variant UNIQUE (id, product_id, product_variant_id),
+        note VARCHAR(100),
+        quantity SMALLINT DEFAULT 1 NOT NULL,
+        unit_price BIGINT NOT NULL,
+        total_price BIGINT NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW () NOT NULL
+    );
+	
+CREATE TABLE
+    checkouts (
+        id SERIAL PRIMARY KEY,
+        user_id UUID CONSTRAINT fk_ch_user_id REFERENCES users (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
+        product_id INT CONSTRAINT fk_ch_product_id REFERENCES products (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
+        product_variant_id INT CONSTRAINT fk_ch_product_variant_id REFERENCES product_variants (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
+        CONSTRAINT uq_ch_order_product_product_variant UNIQUE (id, product_id, product_variant_id),
+        quantity SMALLINT DEFAULT 1 NOT NULL,
+        unit_price BIGINT NOT NULL,
+        total_price BIGINT NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW () NOT NULL
+    );
+	
+-- Drop table
+DROP TABLE checkout_products;
+DROP TABLE checkouts;
+DROP TABLE checkout_statuses;
+DROP TABLE orders;
+	
+-- Alter table
+ALTER TABLE orders
+ADD COLUMN order_pretty_id VARCHAR(50) CONSTRAINT uq_or_order_pretty_id UNIQUE;
+
+ALTER TABLE orders
+DROP COLUMN order_pretty_id;
+
+ALTER TABLE sellers
+ADD average_rating NUMERIC(4, 3) DEFAULT 0 NOT NULL,
+ADD rating_total INT DEFAULT 0 NOT NULL,
+ADD rating_count INT DEFAULT 0 NOT NULL;
+
+ALTER TABLE payments
+ADD category_payment_id INT
+CONSTRAINT fk_py_category_payment_id 
+REFERENCES category_payments (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL;
+
+ALTER TABLE reminder_schedules
+ADD product_variant_id INT 
+CONSTRAINT fk_rs_product_variant_id 
+REFERENCES product_variants (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL;
+
+ALTER TABLE reminder_schedules
+ADD next_warning_send DATE NOT NULL;
+
+-- Create sequence column
+CREATE SEQUENCE order_pretty_id_seq START 1;
+
+-- restart sequence serial number
+ALTER SEQUENCE order_statuses_id_seq RESTART WITH 1;
+
+-- Drop sequece
+DROP SEQUENCE IF EXISTS order_pretty_id_seq;
+
+-- select all data
+SELECT * FROM users;
+SELECT * FROM sellers;
+SELECT * FROM admins;
+SELECT * FROM intervals;
+SELECT * FROM products;
+SELECT * FROM product_variants;
+SELECT * FROM product_images;
+SELECT * FROM ratings;
+SELECT * FROM reminder_schedules;
+SELECT * FROM carts;
+SELECT * FROM checkouts;
+SELECT * FROM orders;
+SELECT * FROM order_statuses;
+SELECT * FROM category_payments;
+SELECT * FROM payments;
+
+-- Delete all data
+DELETE FROM users;
+DELETE FROM sellers;
+DELETE FROM admins;
+DELETE FROM intervals;
+DELETE FROM products;
+DELETE FROM product_variants;
+DELETE FROM product_images;
+DELETE FROM ratings;
+DELETE FROM checkout_statuses;
+DELETE FROM category_payments;
+DELETE FROM payments;
+
+-- auth user
+SELECT id, email, password FROM users WHERE email = 'test email';
+
+-- auth seller
+SELECT id FROM sellers WHERE user_id = '410bab2b-cb7d-4880-9125-c53c91cc83cf';
+
+-- all product
+SELECT p.id AS p_id, p.name AS p_name, p.sold, p.average_rating, s.name AS seller_name,
+						pi.img, pv.id AS pv_id, pv.name AS pv_name, pv.price, pv.discount
+						FROM products p 
+						JOIN sellers s ON p.seller_id = s.id
+						JOIN LATERAL (SELECT pi.img FROM product_images pi WHERE pi.product_id = p.id LIMIT 1) pi ON true
+						JOIN LATERAL (SELECT pv.id, pv.name, pv.price, pv.discount FROM product_variants pv WHERE pv.product_id = p.id LIMIT 1) pv ON true
+						WHERE p.active = true;
+
+-- hot product
+SELECT p.id AS p_id, p.name AS p_name, p.sold, p.average_rating, 
+						s.name AS seller_name, pi.img, pv.id AS pv_id, pv.name AS pv_name, pv.price, pv.discount FROM products p 
+						JOIN sellers s ON p.seller_id = s.id
+						JOIN LATERAL (SELECT pi.img FROM product_images pi WHERE pi.product_id = p.id LIMIT 1) pi ON true
+						JOIN LATERAL (SELECT pv.id, pv.name, pv.price, pv.discount FROM product_variants pv 
+						WHERE pv.product_id = p.id ORDER BY pv.sold DESC LIMIT 1) pv ON true
+						WHERE p.active = true ORDER BY (p.average_rating * p.sold) DESC;
+
+-- discount product
+SELECT p.id AS p_id, p.name AS p_name, p.sold, p.average_rating, s.name AS seller_name,
+						pi.img, pv.id AS pv_id, pv.name AS pv_name, pv.price, pv.discount 
+						FROM products p 
+						JOIN sellers s ON p.seller_id = s.id
+						JOIN LATERAL (SELECT pi.img FROM product_images pi WHERE pi.product_id = p.id LIMIT 1) pi ON true
+						JOIN LATERAL (SELECT pv.id, pv.name, pv.price, pv.discount FROM product_variants pv WHERE pv.product_id = p.id ORDER BY pv.discount DESC LIMIT 1) pv ON true
+						WHERE p.active = true AND pv.discount > 0 
+						ORDER BY pv.discount DESC, p.average_rating DESC, p.sold DESC;
+
+-- detail product
+SELECT p.id AS p_id, p.name AS p_name, p.description, p.sold, p.average_rating, p.rating_count, p.created_at, pi.img, 
+					i.code, i.name AS i_name, pv.id AS pv_id, pv.is_default, pv.name AS pv_name, pv.interval, pv.stock, pv.sold AS pv_sold,
+					pv.price, pv.discount, pv.min_order FROM products p
+					JOIN product_images pi ON pi.product_id = p.id
+					JOIN product_variants pv ON pv.product_id = p.id
+					JOIN intervals i ON pv.interval_id = i.id
+					WHERE p.active = true AND p.id = 2 ORDER BY pv_name;
+
+-- insert products
+INSERT INTO products (seller_id, name, description, sold, average_rating, rating_total, rating_count)
+VALUES ('f37afefc-8ae3-42f3-9b05-7967e0fb49d8', 'testing min order', 'testing', 100, 3.952, 71, 33);
+
+-- insert product variants
+INSERT INTO product_variants (product_id, interval_id, is_default, name, interval, stock, sold, price)
+VALUES (6, 3, true, 'default', 3, 100, 100, 70000);
+
+-- update product variants
+UPDATE product_variants SET min_order = 5
+WHERE id = 9;
+
+UPDATE product_variants SET discount = 19
+WHERE id = 3;
+
+UPDATE product_variants SET price = 99000
+WHERE id = 3;
+
+UPDATE product_variants SET sold = 99
+WHERE id = 2;
+
+-- insert product images
+INSERT INTO product_images (product_id, img)
+VALUES (6, '/assets/img/item.jpg');
+
+-- insert ratings
+INSERT INTO ratings (product_id, product_variant_id, user_id, rating, comment)
+VALUES (6, 9, 'd575bcde-555f-420d-a3ea-df3211b44257', 4, 'testing comment');
+
+-- cart product
+SELECT s.name AS s_name,p.id AS p_id, p.name AS p_name, p.active,
+pv.id AS pv_id, pv.name AS pv_name, pv.interval, pv.stock,
+i.name AS i_name, c.quantity, pv.price, pv.min_order
+FROM carts c
+JOIN products p ON c.product_id = p.id
+JOIN sellers s ON p.seller_id = s.id
+JOIN product_variants pv ON c.product_variant_id = pv.id
+JOIN intervals i ON pv.interval_id = i.id
+WHERE c.user_id = '410bab2b-cb7d-4880-9125-c53c91cc83cf' ORDER BY p.active DESC, p.created_at DESC;
+
+-- Insert cart product
+INSERT INTO carts(user_id, product_id, product_variant_id, quantity)
+SELECT '1665966f-f4d7-4b4d-ac02-96ba473b9374', p.id, pv.id, 33
+FROM products p
+JOIN product_variants pv ON pv.product_id = p.id
+WHERE p.id = 1 AND pv.id = 40 AND p.active = true AND pv.stock >= 33
+ON CONFLICT (user_id, product_id, product_variant_id) DO UPDATE
+SET quantity = carts.quantity + EXCLUDED.quantity
+WHERE carts.quantity + EXCLUDED.quantity <= (
+SELECT stock FROM product_variants WHERE id = EXCLUDED.product_variant_id)
+RETURNING id;
+
+SELECT * FROM carts;
+-- Update cart product
+UPDATE carts c SET quantity = 10
+FROM product_variants pv
+WHERE c.user_id = '410bab2b-cb7d-4880-9125-c53c91cc83cf' AND c.product_id = 6 AND c.product_variant_id = 48
+AND pv.id = c.product_variant_id AND 10 <= pv.stock
+RETURNING pv.product_id, pv.id;
+
+UPDATE carts c SET quantity = $4
+	FROM product_variants pv
+	WHERE c.user_id = $1 AND c.product_id = $2 AND c.product_variant_id = $3
+	AND pv.id = c.product_variant_id AND $4 <= pv.stock
+	RETURNING c.id
+
+-- Delete cart product
+DELETE FROM carts WHERE user_id = '1665966f-f4d7-4b4d-ac02-96ba473b9374';
+
+DELETE FROM carts
+WHERE user_id = '1665966f-f4d7-4b4d-ac02-96ba473b9374' AND product_id = 1 AND product_variant_id = 40
+RETURNING product_id, product_variant_id;
+
+-- Update average_rating, rating_total, rating_count column in sellers table
+UPDATE sellers SET average_rating = 4.243, rating_total = 290, rating_count = 59
+WHERE id = 'd6ce2129-b4de-46a9-935c-aa535c1de717';
+
+-- Select data for seller
+SELECT s.id, s.name, s.img, s.address, s.sold_products,
+s.average_rating, s.rating_total, s.rating_count, s.created_at
+FROM sellers s
+JOIN products p ON p.seller_id = s.id
+WHERE p.id = '2';
+
+-- Select data for summarize seller
+SELECT s.id, s.name, s.img, s.sold_products, s.average_rating 
+FROM sellers s
+JOIN products p ON p.seller_id = s.id
+WHERE p.id = '2';
+
+-- Select rating
+SELECT average_rating, rating_count FROM products WHERE id = 1;
+
+-- Select comment rating 
+SELECT u.name AS u_name, u.img, pv.name AS pv_name, pv.interval, i.name AS i_name,
+r.rating, r.comment, r.created_at
+FROM ratings r
+JOIN users u ON u.id = r.user_id
+JOIN product_variants pv ON pv.id = r.product_variant_id
+JOIN intervals i ON i.id = pv.interval_id
+WHERE r.product_id = 1 ORDER BY r.rating DESC, r.created_at DESC;
+
+-- Category Payments
+CREATE TABLE
+category_payments (id SERIAL PRIMARY KEY, name VARCHAR(50) NOT NULL);
+
+-- Checkouts
+SELECT c.user_id, c.product_id, c.product_variant_id, c.quantity, c.unit_price, c.total_price
+	FROM checkouts c
+	JOIN products p ON c.product_id = p.id
+	WHERE c.user_id = '410bab2b-cb7d-4880-9125-c53c91cc83cf' AND p.active = true
+	ORDER BY c.created_at DESC;
+
+SELECT c.product_id, c.product_variant_id, s.name AS s_name, s.img AS s_img, p.name AS p_name, pi.img AS p_img, pv.name AS pv_name, c.quantity, c.total_price
+FROM checkouts c
+JOIN products p ON c.product_id = p.id
+JOIN LATERAL (SELECT pi.img FROM product_images pi WHERE c.product_id = pi.product_id LIMIT 1) pi ON true
+JOIN product_variants pv ON c.product_variant_id = pv.id
+JOIN sellers s ON p.seller_id = s.id
+WHERE c.user_id = '410bab2b-cb7d-4880-9125-c53c91cc83cf' AND p.active = true
+ORDER BY c.created_at DESC;
+
+DELETE FROM checkouts
+	WHERE user_id = '410bab2b-cb7d-4880-9125-c53c91cc83cf'
+	RETURNING user_id;
+
+-- Payments
+SELECT p.id AS p_id, p.name AS p_name, p.category_payment_id, cp.name AS cp_name
+FROM payments p
+JOIN category_payments cp ON p.category_payment_id = cp.id
+ORDER BY p.category_payment_id;
+
+SELECT * FROM payments;
+
+SELECT * FROM category_payments;
+
+-- testing
+SELECT * FROM users WHERE id = '410bab2b-cb7d-4880-9125-c53c91cc83cf';
+
+UPDATE product_variants SET discount = 17 WHERE id = 47;
+
+UPDATE product_variants SET sold = 45 WHERE id = 43;
+
+SELECT pv.stock FROM product_variants pv
+JOIN products p ON pv.product_id = p.id
+WHERE pv.id = 42 AND p.active = true;
+
+SELECT p.id, p.name, pv.id, pv.stock
+FROM products p
+JOIN product_variants pv ON p.id = pv.product_id
+WHERE pv.stock > 0 AND pv.stock >= 100;
+
+SELECT
+  *
+FROM
+  UNNEST(ARRAY[1, 2, 2, 5, NULL]) AS unnest_column
