@@ -75,7 +75,7 @@ func GetProductById(id string) (*entity.JsonProduct, error) {
 					JOIN product_images pi ON pi.product_id = p.id
 					JOIN product_variants pv ON pv.product_id = p.id
 					JOIN intervals i ON pv.interval_id = i.id
-					WHERE p.active = true AND p.id = $1;`, id)
+					WHERE p.active = true AND p.id = $1 ORDER BY pv_name;`, id)
 
 	if err != nil {
 		return nil, err
