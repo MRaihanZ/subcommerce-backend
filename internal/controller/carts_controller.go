@@ -243,19 +243,8 @@ func DeleteCartsHandler(c *gin.Context) {
 }
 
 func DeleteCartHandler(c *gin.Context) {
-	prodId := c.Query("product_id")
-	prodVarId := c.Query("product_variant_id")
-	if prodId == "" || prodVarId == "" {
-		msg := "wrong query"
-		res := entity.Response[error]{
-			Code:   http.StatusBadRequest,
-			Status: "error",
-			Data:   nil,
-			Error:  &msg,
-		}
-		c.JSON(http.StatusBadRequest, res)
-		return
-	}
+	prodId := c.Param("product_id")
+	prodVarId := c.Param("product_variant_id")
 
 	numProdId, err := strconv.Atoi(prodId)
 	if err != nil {

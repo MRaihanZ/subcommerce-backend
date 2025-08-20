@@ -77,7 +77,7 @@ func main() {
 	carts.POST("/", controller.CreateCartHandler)
 	carts.PATCH("/", controller.UpdateCartHandler)
 	carts.DELETE("/", controller.DeleteCartsHandler)
-	carts.DELETE("/product", controller.DeleteCartHandler)
+	carts.DELETE("/product/:product_id/:product_variant_id", controller.DeleteCartHandler)
 
 	// csrf
 	csrfRoutes := v1.Group("/csrf")
@@ -85,6 +85,16 @@ func main() {
 	csrfRoutes.GET("/", controller.CreateToken)
 	// csrf token from session
 	csrfRoutes.GET("/session", controller.GetToken)
+
+	// order
+	order := v1.Group("/orders")
+	order.GET("/", controller.GetOrdersHandler)
+	order.POST("/", controller.CreateOrderHandler)
+	order.GET("/checkouts", controller.GetCheckoutOrdersHandler)
+	order.POST("/checkouts", controller.CreateCheckoutOrderHandler)
+	order.GET("/payments", controller.GetOrderPaymentsHandler)
+	// using product_id and product_variant_id in json
+	order.PATCH("/", controller.UpdateOrderHandler)
 
 	// products
 	products := v1.Group("/products")

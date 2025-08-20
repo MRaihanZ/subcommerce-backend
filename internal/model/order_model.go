@@ -1,0 +1,219 @@
+package model
+
+import (
+	"context"
+	"database/sql"
+	"errors"
+	"fmt"
+	"log"
+	"strings"
+	"time"
+
+	"github.com/MRaihanZ/subcommerce-backend/internal/db"
+	"github.com/MRaihanZ/subcommerce-backend/internal/entity"
+	"github.com/MRaihanZ/subcommerce-backend/internal/errs"
+)
+
+// func GetAllOrder(userId interface{}) ([]entity.Order, error) {
+// 	var orders []entity.Order
+// 	err := db.DB.Where("user_id = ?", userId).Find(&orders).Error
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	return orders, nil
+// }
+
+func CreateOrder(id interface{}, order []entity.OrderRequest) (*string, error) {
+	query := "INSERT INTO orders (user_id, payment_id, order_status_id, product_id, product_variant_id, note, quantity, unit_price, total_price, order_pretty_id) VALUES "
+	args := []interface{}{}
+	reqData := []string{}
+
+	for i, arg := range order {
+		n := i*9 + 1
+		reqData = append(reqData, fmt.Sprintf(`($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, 'INV-' || TO_CHAR(NOW(), 'YYYYMMDD') || '-' ||
+  		LPAD(nextval('order_pretty_id_seq')::text, 4, '0'))`, n, n+1, n+2, n+3, n+4, n+5, n+6, n+7, n+8))
+		args = append(args, id, arg.PayId, 1, arg.PId, arg.PVId, arg.Note, arg.Quantity, arg.UnitPrice, arg.TotalPrice)
+	}
+	query += strings.Join(reqData, ",")
+	query += "RETURNING user_id"
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var userId string
+
+	err := db.DB.QueryRowxContext(ctx, query, args...).Scan(&userId)
+	if err != nil {
+		log.Println("insert error: ", err)
+		if errors.Is(err, sql.ErrNoRows) {
+			log.Println("no order found")
+			return nil, errs.ErrNoOrderFound
+		}
+		return nil, err
+	}
+
+	_, err = DeleteCheckoutOrder(id)
+	if err != nil {
+		log.Println("delete error: ", err)
+		if errors.Is(err, errs.ErrNoCheckoutFound) {
+			log.Println("no checkout found")
+			return nil, errs.ErrNoCheckoutFound
+		}
+		return nil, err
+	}
+
+	return &userId, nil
+}
+
+func GetAllCheckoutOrder(userId interface{}) ([]entity.GetCheckoutOrderResponse, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var orders []entity.GetCheckoutOrderResponse
+	err := db.DB.SelectContext(ctx, &orders, `SELECT c.product_id, c.product_variant_id, s.name AS s_name, s.img AS s_img, p.name AS p_name, pi.img AS p_img, pv.name AS pv_name, c.quantity, c.total_price
+	FROM checkouts c
+	JOIN products p ON c.product_id = p.id
+	JOIN LATERAL (SELECT pi.img FROM product_images pi WHERE c.product_id = pi.product_id LIMIT 1) pi ON true
+	JOIN product_variants pv ON c.product_variant_id = pv.id
+	JOIN sellers s ON p.seller_id = s.id
+	WHERE c.user_id = $1 AND p.active = true
+	ORDER BY c.created_at DESC;`, userId)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errs.ErrNoCheckoutFound
+		}
+		return nil, err
+	}
+
+	if len(orders) == 0 {
+		return nil, errs.ErrNoCheckoutFound
+	}
+
+	return orders, nil
+}
+
+func DeleteCheckoutOrder(userId interface{}) (*string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var DeleteCheckoutUser string
+	err := db.DB.QueryRowxContext(ctx, `DELETE FROM checkouts
+	WHERE user_id = $1
+	RETURNING user_id`, userId).Scan(&DeleteCheckoutUser)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errs.ErrNoCheckoutFound
+		}
+		return nil, err
+	}
+
+	return &DeleteCheckoutUser, nil
+}
+
+func CreateCheckoutOrder(id interface{}, checkouts []entity.OrderCheckout, stateAction string) (*string, error) {
+	if len(checkouts) == 0 {
+		return nil, errs.ErrCheckoutRequestZero
+	}
+
+	_, err := GetAllCheckoutOrder(id)
+	if err != nil {
+		if errors.Is(err, errs.ErrNoCheckoutFound) {
+			query := "INSERT INTO checkouts (user_id, product_id, product_variant_id, quantity, unit_price, total_price) VALUES "
+			args := []interface{}{}
+			reqData := []string{}
+
+			for i, arg := range checkouts {
+				n := i*6 + 1
+				reqData = append(reqData, fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d)", n, n+1, n+2, n+3, n+4, n+5))
+				args = append(args, id, arg.PId, arg.PVId, arg.Quantity, arg.UnitPrice, arg.TotalPrice)
+			}
+			query += strings.Join(reqData, ",")
+			query += "RETURNING user_id"
+
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+
+			var userId string
+
+			err = db.DB.QueryRowxContext(ctx, query, args...).Scan(&userId)
+			if err != nil {
+				if errors.Is(err, sql.ErrNoRows) {
+					return nil, errs.ErrNoCheckoutFound
+				}
+				return nil, err
+			}
+
+			if stateAction == "cart" {
+				for _, val := range checkouts {
+					_, err = DeleteCart(id, val.PId, val.PVId)
+					if err != nil {
+						return nil, err
+					}
+				}
+			}
+			return &userId, nil
+		}
+		return nil, err
+	}
+
+	_, err = DeleteCheckoutOrder(id)
+	if err != nil {
+		if errors.Is(err, errs.ErrNoCheckoutFound) {
+			return nil, errs.ErrNoCheckoutFound
+		}
+		return nil, err
+	}
+
+	query := "INSERT INTO checkouts (user_id, product_id, product_variant_id, quantity, unit_price, total_price) VALUES "
+	args := []interface{}{}
+	reqData := []string{}
+
+	for i, arg := range checkouts {
+		n := i*6 + 1
+		reqData = append(reqData, fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d)", n, n+1, n+2, n+3, n+4, n+5))
+		args = append(args, id, arg.PId, arg.PVId, arg.Quantity, arg.UnitPrice, arg.TotalPrice)
+	}
+	query += strings.Join(reqData, ",")
+	query += "RETURNING user_id"
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var userId string
+
+	err = db.DB.QueryRowxContext(ctx, query, args...).Scan(&userId)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errs.ErrNoCheckoutFound
+		}
+		return nil, err
+	}
+	if stateAction == "cart" {
+		for _, val := range checkouts {
+			_, err = DeleteCart(id, val.PId, val.PVId)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+	return &userId, nil
+}
+
+func GetAllOrderPayment() ([]entity.GetOrderPaymentResponse, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var payments []entity.GetOrderPaymentResponse
+	err := db.DB.SelectContext(ctx, &payments, `SELECT p.id AS p_id, p.name AS p_name, p.category_payment_id, cp.name AS cp_name
+	FROM payments p
+	JOIN category_payments cp ON p.category_payment_id = cp.id
+	ORDER BY p.category_payment_id;`)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errs.ErrNoPaymentFound
+		}
+		return nil, err
+	}
+
+	return payments, nil
+}
