@@ -112,7 +112,7 @@ CREATE TABLE
 
 -- 1. instant
 -- 2. e-money
--- 3. virtual account
+-- 3. transfer
 CREATE TABLE
     payments (
         id SERIAL PRIMARY KEY,
@@ -126,17 +126,13 @@ CREATE TABLE
 -- e-money --
 -- 2. GoPay
 -- 3. DANA
--- 4. OVO
--- virtual account --
+-- transfer --
 -- 5. Mandiri
--- 6. BSI
--- 7. BRI
 -- 8. BCA
 -- 9. BNI
 -- 10. Permata
-
 CREATE TABLE
-    checkout_statuses (id SERIAL PRIMARY KEY, name VARCHAR(30) NOT NULL);
+    order_statuses (id SERIAL PRIMARY KEY, name VARCHAR(30) NOT NULL);
 
 -- 1. menunggu pembayaran
 -- 2. pembayaran dibatalkan
@@ -152,12 +148,9 @@ CREATE TABLE
     checkouts (
         id SERIAL PRIMARY KEY,
         user_id UUID CONSTRAINT fk_ch_user_id REFERENCES users (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
-        payment_id INT CONSTRAINT fk_ch_payment_id REFERENCES payments (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
-        checkout_status_id INT CONSTRAINT fk_ch_checkout_status_id REFERENCES checkout_statuses (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
-        product_id INT CONSTRAINT fk_cp_product_id REFERENCES products (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
-        product_variant_id INT CONSTRAINT fk_cp_product_variant_id REFERENCES product_variants (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
-        CONSTRAINT uq_ch_checkout_product_product_variant UNIQUE (id, product_id, product_variant_id),
-        note VARCHAR(100),
+        product_id INT CONSTRAINT fk_ch_product_id REFERENCES products (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
+        product_variant_id INT CONSTRAINT fk_ch_product_variant_id REFERENCES product_variants (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
+        CONSTRAINT uq_ch_order_product_product_variant UNIQUE (id, product_id, product_variant_id),
         quantity SMALLINT DEFAULT 1 NOT NULL,
         unit_price BIGINT NOT NULL,
         total_price BIGINT NOT NULL,
@@ -165,16 +158,39 @@ CREATE TABLE
     );
 
 CREATE TABLE
+    orders (
+        id SERIAL PRIMARY KEY,
+        user_id UUID CONSTRAINT fk_or_user_id REFERENCES users (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
+        payment_id INT CONSTRAINT fk_or_payment_id REFERENCES payments (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
+        order_status_id INT CONSTRAINT fk_or_order_status_id REFERENCES order_statuses (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
+        product_id INT CONSTRAINT fk_or_product_id REFERENCES products (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
+        product_variant_id INT CONSTRAINT fk_or_product_variant_id REFERENCES product_variants (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
+        CONSTRAINT uq_or_order_product_product_variant UNIQUE (id, product_id, product_variant_id),
+        note VARCHAR(100),
+        quantity SMALLINT DEFAULT 1 NOT NULL,
+        unit_price BIGINT NOT NULL,
+        total_price BIGINT NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW () NOT NULL
+    );
+
+ALTER TABLE orders
+ADD COLUMN order_pretty_id VARCHAR(50) CONSTRAINT uq_or_order_pretty_id UNIQUE;
+
+CREATE SEQUENCE order_pretty_id_seq START 1;
+
+CREATE TABLE
     reminder_schedules (
         id UUID PRIMARY KEY,
         user_id UUID CONSTRAINT fk_rs_user_id REFERENCES users (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
         product_id INT CONSTRAINT fk_rs_product_id REFERENCES products (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
-        CONSTRAINT uq_rs_user_product UNIQUE (user_id, product_id),
+        product_variant_id INT CONSTRAINT fk_rs_product_variant_id REFERENCES product_variants (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
+        CONSTRAINT uq_rs_user_product_product_variant UNIQUE (user_id, product_id, product_variant_id),
         next_send DATE NOT NULL,
-        created_at TIMESTAMP DEFAULT NOW () NOT NULL,
+        next_warning_send DATE NOT NULL,
+        next_remove DATE NOT NULL,
         last_sent_at DATE DEFAULT NOW () NOT NULL,
         is_over BOOLEAN DEFAULT FALSE NOT NULL,
-        next_remove DATE NOT NULL
+        created_at TIMESTAMP DEFAULT NOW () NOT NULL
     );
 
 CREATE TABLE
