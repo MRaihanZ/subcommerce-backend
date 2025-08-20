@@ -220,22 +220,35 @@ func product_images() {
 	log.Println("=== Complete ===")
 }
 
+type productVariantRatings struct {
+	Id int
+}
+
+type productRatings struct {
+	Id        int
+	ProdVarId []productVariantRatings
+}
+
 func ratings() {
 	fmt.Println("")
 	log.Println("+++ Seeding ratings table +++")
 
 	gofakeit.Seed(0)
 
-	var products []string
+	var products []int
 	err := DB.Select(&products, "SELECT id FROM products LIMIT 5")
 	if err != nil {
 		log.Fatalf("Failed to fetch products: %v", err)
 	}
 
-	var product_variants []string
-	err = DB.Select(&product_variants, "SELECT id FROM product_variants")
-	if err != nil {
-		log.Fatalf("Failed to fetch product_variants: %v", err)
+	var product_variants []int
+	var product_variant int
+	for _, p := range products {
+		err = DB.Get(&product_variant, "SELECT id FROM product_variants WHERE product_id = $1", p)
+		if err != nil {
+			log.Fatalf("Failed to fetch product_variants: %v", err)
+		}
+		product_variants = append(product_variants, product_variant)
 	}
 
 	var users []string
@@ -263,10 +276,10 @@ func ratings() {
 	log.Println("=== Complete ===")
 }
 
-func checkout_statuses() {
+func order_statuses() {
 	fmt.Println("")
-	log.Println("+++ Seeding checkout statuses table +++")
-	_, err := DB.Exec(`INSERT INTO checkout_statuses (name)
+	log.Println("+++ Seeding order statuses table +++")
+	_, err := DB.Exec(`INSERT INTO order_statuses (name)
 		VALUES ('menunggu pembayaran'),
 		('pembayaran dibatalkan'),
 		('batas waktu pembayaran habis'),
@@ -283,17 +296,39 @@ func checkout_statuses() {
 	log.Println("=== Complete ===")
 }
 
+func category_payments() {
+	fmt.Println("")
+	log.Println("+++ Seeding category payments table +++")
+	_, err := DB.Exec(`INSERT INTO category_payments (name)
+		VALUES 
+		('Instant'),
+		('E-Money'),
+		('Transfer')`)
+	if err != nil {
+		log.Println("insert error: ", err)
+	}
+	log.Println("=== Complete ===")
+}
+
 func payments() {
 	fmt.Println("")
-	log.Println("+++ Seeding checkout statuses table +++")
-	_, err := DB.Exec(`INSERT INTO checkout_statuses (name)
+	log.Println("+++ Seeding payments table +++")
+	_, err := DB.Exec(`INSERT INTO payments (name, img, category_payment_id)
 		VALUES 
 		('Qris', '
-	/assets/svg/payments_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg'),
+	/assets/svg/payments_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg', 1),
+		('E-Money GoPay', '
+	/assets/svg/payments_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg', 2),
+		('E-Money DANA', '
+	/assets/svg/payments_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg', 2),
 		('Transfer Mandiri', '
-	/assets/svg/payments_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg'),
-		('pembayaran dibatalkan', '
-	/assets/svg/payments_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg')`)
+	/assets/svg/payments_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg', 3),
+		('Transfer BCA', '
+	/assets/svg/payments_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg', 3),
+		('Transfer BNI', '
+	/assets/svg/payments_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg', 3),
+		('Transfer Permata', '
+	/assets/svg/payments_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg', 3)`)
 	if err != nil {
 		log.Println("insert error: ", err)
 	}
@@ -309,5 +344,7 @@ func main() {
 	product_variants()
 	product_images()
 	ratings()
-	checkout_statuses()
+	order_statuses()
+	category_payments()
+	payments()
 }
