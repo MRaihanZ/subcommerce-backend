@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
@@ -64,9 +63,7 @@ func CreateOrder(id interface{}, order []entity.OrderRequest) (*string, error) {
 
 	err := db.DB.QueryRowxContext(ctx, query, args...).Scan(&userId)
 	if err != nil {
-		log.Println("insert error: ", err)
 		if errors.Is(err, sql.ErrNoRows) {
-			log.Println("no order found")
 			return nil, errs.ErrNoOrderFound
 		}
 		return nil, err
@@ -74,9 +71,7 @@ func CreateOrder(id interface{}, order []entity.OrderRequest) (*string, error) {
 
 	_, err = DeleteCheckoutOrder(id)
 	if err != nil {
-		log.Println("delete error: ", err)
 		if errors.Is(err, errs.ErrNoCheckoutFound) {
-			log.Println("no checkout found")
 			return nil, errs.ErrNoCheckoutFound
 		}
 		return nil, err
