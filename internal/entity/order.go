@@ -11,9 +11,11 @@ type OrderRequest struct {
 }
 
 type OrderGetResponse struct {
-	OPrettyId  string `db:"order_pretty_id" json:"order_pretty_id"`
+	OId        string `db:"order_id" json:"o_id"`
+	OPrettyId  string `db:"order_pretty_id" json:"o_order_pretty_id"`
 	PayName    string `db:"pay_name" json:"pay_name"`
 	OSName     string `db:"os_name" json:"os_name"`
+	Rating     bool   `db:"rating" json:"rating"`
 	PId        int    `db:"product_id" json:"p_id"`
 	PVId       int    `db:"product_variant_id" json:"pv_id"`
 	SName      string `db:"s_name" json:"s_name"`
