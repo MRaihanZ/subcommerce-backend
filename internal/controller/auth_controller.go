@@ -146,7 +146,7 @@ func VerifyUserHandler(c *gin.Context) {
 		session.Set("user_id", user.Id)
 		session.Set("csrf_token", csrfToken)
 		session.Set("is_logged_in", true)
-		session.Set("is_seller", false)
+		session.Set("seller_id", "no_id")
 		if err := session.Save(); err != nil {
 			msg := "Failed to save session | " + err.Error()
 			res := entity.Response[*entity.SignIn]{
@@ -164,7 +164,7 @@ func VerifyUserHandler(c *gin.Context) {
 		session.Set("seller_id", seller)
 		session.Set("csrf_token", csrfToken)
 		session.Set("is_logged_in", true)
-		session.Set("is_seller", true)
+		session.Set("seller_id", seller)
 		if err := session.Save(); err != nil {
 			msg := "Failed to save session | " + err.Error()
 			res := entity.Response[*entity.SignIn]{
@@ -187,12 +187,25 @@ func VerifyUserHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, res)
 }
 
-func CheckStatusHandler(c *gin.Context) {
+func CreateSellerHandler(c *gin.Context) {
+	var req entity.CreateSellerRequest
+	if err := c.BindJSON(&req); err != nil {
+		msg := err.Error()
+		res := entity.Response[error]{
+			Code:   http.StatusBadRequest,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusBadRequest, res)
+		return
+	}
+
 	session := sessions.Default(c)
 	id := session.Get("user_id")
 	if id == nil {
 		msg := "id null"
-		res := entity.Response[*entity.SignIn]{
+		res := entity.Response[error]{
 			Code:   http.StatusUnauthorized,
 			Status: "error",
 			Data:   nil,
@@ -202,7 +215,101 @@ func CheckStatusHandler(c *gin.Context) {
 		return
 	}
 
-	stat := entity.Status{Status: "authenticated", Id: id}
+	// Create seller in database
+	seller, err := model.CreateSeller(id, req)
+	if err != nil {
+		msg := err.Error()
+		res := entity.Response[error]{
+			Code:   http.StatusInternalServerError,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusInternalServerError, res)
+		return
+	}
+
+	if seller == nil {
+		msg := "error return seller id"
+		res := entity.Response[error]{
+			Code:   http.StatusInternalServerError,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusInternalServerError, res)
+		return
+	}
+
+	res := entity.Response[*string]{
+		Code:   http.StatusOK,
+		Status: "ok",
+		Data:   seller,
+		Error:  nil,
+	}
+	c.JSON(http.StatusOK, res)
+}
+
+func CheckStatusHandler(c *gin.Context) {
+	session := sessions.Default(c)
+	id := session.Get("user_id")
+	if id == nil {
+		msg := "id null"
+		res := entity.Response[error]{
+			Code:   http.StatusUnauthorized,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusUnauthorized, res)
+		return
+	}
+	idStr, ok := id.(string)
+	if !ok {
+		msg := "id is not string"
+		res := entity.Response[error]{
+			Code:   http.StatusUnauthorized,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusUnauthorized, res)
+		return
+	}
+
+	seller := session.Get("seller_id")
+	if seller == nil {
+		msg := "seller null"
+		res := entity.Response[error]{
+			Code:   http.StatusUnauthorized,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusUnauthorized, res)
+		return
+	}
+
+	sellerStr, ok := seller.(string)
+	if !ok {
+		msg := "seller_id is not string"
+		res := entity.Response[error]{
+			Code:   http.StatusUnauthorized,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusUnauthorized, res)
+		return
+	}
+
+	var stat entity.Status
+	if sellerStr == "no_id" {
+		stat = entity.Status{Status: "authenticated", SellerId: "no_id", Id: idStr}
+	} else {
+		stat = entity.Status{Status: "authenticated", SellerId: sellerStr, Id: idStr}
+	}
+
 	res := entity.Response[entity.Status]{
 		Code:   http.StatusOK,
 		Status: "ok",

@@ -3,6 +3,7 @@ package controller
 import (
 	"errors"
 	"net/http"
+	"strconv"
 
 	"github.com/MRaihanZ/subcommerce-backend/internal/entity"
 	"github.com/MRaihanZ/subcommerce-backend/internal/errs"
@@ -115,6 +116,80 @@ func CreateOrderHandler(c *gin.Context) {
 		Code:   http.StatusOK,
 		Status: "ok",
 		Data:   cart,
+		Error:  nil,
+	}
+	c.JSON(http.StatusOK, res)
+}
+
+func UpdateStatusOrderHandler(c *gin.Context) {
+	orderId := c.Param("order_id")
+	numOrderId, err := strconv.Atoi(orderId)
+	if err != nil {
+		msg := "wrong query value"
+		res := entity.Response[error]{
+			Code:   http.StatusBadRequest,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusBadRequest, res)
+		return
+	}
+
+	statusId := c.Param("status_id")
+	numStatusId, err := strconv.Atoi(statusId)
+	if err != nil {
+		msg := "wrong query value"
+		res := entity.Response[error]{
+			Code:   http.StatusBadRequest,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusBadRequest, res)
+		return
+	}
+
+	session := sessions.Default(c)
+	id := session.Get("user_id")
+	if id == nil {
+		msg := "id null"
+		res := entity.Response[error]{
+			Code:   http.StatusUnauthorized,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusUnauthorized, res)
+		return
+	}
+
+	status, err := model.UpdateStatusOrder(numOrderId, id, numStatusId)
+	if err != nil {
+		var code int
+		var msg string
+		switch {
+		case errors.Is(err, errs.ErrNoOrderFound):
+			code = http.StatusInternalServerError
+			msg = err.Error()
+		default:
+			code = http.StatusInternalServerError
+			msg = "internal server error"
+		}
+		res := entity.Response[error]{
+			Code:   code,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(code, res)
+		return
+	}
+
+	res := entity.Response[*int]{
+		Code:   http.StatusOK,
+		Status: "ok",
+		Data:   status,
 		Error:  nil,
 	}
 	c.JSON(http.StatusOK, res)

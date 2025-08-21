@@ -81,6 +81,23 @@ func CreateOrder(id interface{}, order []entity.OrderRequest) (*string, error) {
 	return &userId, nil
 }
 
+func UpdateStatusOrder(orderId int, userId interface{}, statusId int) (*int, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	err := db.DB.QueryRowContext(ctx, `UPDATE orders SET order_status_id = $1
+	WHERE id = $2 AND user_id = $3
+	RETURNING order_status_id`, statusId, orderId, userId).Scan(&orderId)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errs.ErrNoOrderFound
+		}
+		return nil, err
+	}
+
+	return &orderId, nil
+}
+
 func UpdateRatingOrder(productId int, productVariantId int, orderId int, userId interface{}) (*bool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

@@ -66,9 +66,7 @@ func main() {
 	auth.POST("/login", controller.VerifyUserHandler)
 	auth.POST("/logout", controller.LogoutHandler)
 	auth.POST("/register", controller.CreateUserHandler)
-	// auth.POST("/verification/seller", controller.VerificationSellerHandler)
-	// auth.POST("/status/seller", controller.CheckStatusSellerHandler)
-	// auth.POST("/register/seller", controller.CreateSellerHandler)
+	auth.POST("/register/seller", controller.CreateSellerHandler)
 	auth.GET("/status", controller.CheckStatusHandler)
 
 	// carts
@@ -90,6 +88,7 @@ func main() {
 	order := v1.Group("/orders")
 	order.GET("/", controller.GetOrdersHandler)
 	order.POST("/", controller.CreateOrderHandler)
+	order.PATCH("/:order_id/:status_id", controller.UpdateStatusOrderHandler)
 	order.GET("/checkouts", controller.GetCheckoutOrdersHandler)
 	order.POST("/checkouts", controller.CreateCheckoutOrderHandler)
 	order.GET("/payments", controller.GetOrderPaymentsHandler)
@@ -112,7 +111,7 @@ func main() {
 	// sellers
 	sellers := v1.Group("/sellers")
 	sellers.GET("/", controller.GetSeller)
-	sellers.GET("/:product_id/summarize", controller.GetSellerSummarize)
+	sellers.GET("/summarize/:product_id", controller.GetSellerSummarize)
 
 	// users
 	users := v1.Group("/users")
