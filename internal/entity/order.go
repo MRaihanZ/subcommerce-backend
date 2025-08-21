@@ -10,6 +10,24 @@ type OrderRequest struct {
 	TotalPrice int    `db:"total_price" json:"total_price"`
 }
 
+type OrderGetResponse struct {
+	OPrettyId  string `db:"order_pretty_id" json:"order_pretty_id"`
+	PayName    string `db:"pay_name" json:"pay_name"`
+	OSName     string `db:"os_name" json:"os_name"`
+	PId        int    `db:"product_id" json:"p_id"`
+	PVId       int    `db:"product_variant_id" json:"pv_id"`
+	SName      string `db:"s_name" json:"s_name"`
+	SImg       string `db:"s_img" json:"s_img"`
+	PName      string `db:"p_name" json:"p_name"`
+	PImg       string `db:"p_img" json:"p_img"`
+	PActive    string `db:"active" json:"active"`
+	PVName     string `db:"pv_name" json:"pv_name"`
+	PvInterval int    `db:"interval" json:"interval"`
+	IName      string `db:"i_name" json:"i_name"`
+	Quantity   int    `db:"quantity" json:"quantity"`
+	TotalPrice int    `db:"total_price" json:"total_price"`
+}
+
 type OrderCheckout struct {
 	PId        int `db:"product_id" json:"p_id"`
 	PVId       int `db:"product_variant_id" json:"pv_id"`
@@ -26,6 +44,8 @@ type GetCheckoutOrderResponse struct {
 	PName      string `db:"p_name" json:"p_name"`
 	PImg       string `db:"p_img" json:"p_img"`
 	PVName     string `db:"pv_name" json:"pv_name"`
+	PvInterval int    `db:"interval" json:"interval"`
+	IName      string `db:"i_name" json:"i_name"`
 	Quantity   int    `db:"quantity" json:"quantity"`
 	TotalPrice int    `db:"total_price" json:"total_price"`
 }

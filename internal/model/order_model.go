@@ -14,14 +14,34 @@ import (
 	"github.com/MRaihanZ/subcommerce-backend/internal/errs"
 )
 
-// func GetAllOrder(userId interface{}) ([]entity.Order, error) {
-// 	var orders []entity.Order
-// 	err := db.DB.Where("user_id = ?", userId).Find(&orders).Error
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	return orders, nil
-// }
+func GetAllOrder(userId interface{}) ([]entity.OrderGetResponse, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var orders []entity.OrderGetResponse
+	err := db.DB.SelectContext(ctx, &orders, `SELECT pay.name AS pay_name, os.name AS os_name, o.product_id, o.product_variant_id, o.quantity, o.total_price, o.order_pretty_id,
+	s.name AS s_name, s.img as s_img, p.name AS p_name, pi.img AS p_img, p.active,
+	pv.name AS pv_name, pv.interval, i.name AS i_name
+	FROM orders o
+	JOIN order_statuses os ON o.order_status_id = os.id
+	JOIN payments pay ON o.payment_id = pay.id
+	JOIN products p ON o.product_id = p.id
+	JOIN product_variants pv ON o.product_variant_id = pv.id
+	JOIN LATERAL (SELECT pi.img FROM product_images pi WHERE p.id = pi.product_id LIMIT 1) pi ON true
+	JOIN sellers s ON p.seller_id = s.id
+	JOIN intervals i ON pv.interval_id = i.id
+	WHERE o.user_id = $1
+	ORDER BY o.created_at DESC, o.order_pretty_id DESC;`, userId)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(orders) == 0 {
+		return nil, errs.ErrNoOrderFound
+	}
+
+	return orders, nil
+}
 
 func CreateOrder(id interface{}, order []entity.OrderRequest) (*string, error) {
 	query := "INSERT INTO orders (user_id, payment_id, order_status_id, product_id, product_variant_id, note, quantity, unit_price, total_price, order_pretty_id) VALUES "
@@ -69,27 +89,27 @@ func GetAllCheckoutOrder(userId interface{}) ([]entity.GetCheckoutOrderResponse,
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	var orders []entity.GetCheckoutOrderResponse
-	err := db.DB.SelectContext(ctx, &orders, `SELECT c.product_id, c.product_variant_id, s.name AS s_name, s.img AS s_img, p.name AS p_name, pi.img AS p_img, pv.name AS pv_name, c.quantity, c.total_price
+	var checkouts []entity.GetCheckoutOrderResponse
+	err := db.DB.SelectContext(ctx, &checkouts, `SELECT c.product_id, c.product_variant_id, s.name AS s_name, s.img AS s_img,
+	p.name AS p_name, pi.img AS p_img, pv.name AS pv_name, pv.interval, i.name AS i_name,
+	c.quantity, c.total_price
 	FROM checkouts c
 	JOIN products p ON c.product_id = p.id
 	JOIN LATERAL (SELECT pi.img FROM product_images pi WHERE c.product_id = pi.product_id LIMIT 1) pi ON true
 	JOIN product_variants pv ON c.product_variant_id = pv.id
 	JOIN sellers s ON p.seller_id = s.id
+	JOIN intervals i ON pv.interval_id = i.id
 	WHERE c.user_id = $1 AND p.active = true
 	ORDER BY c.created_at DESC;`, userId)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errs.ErrNoCheckoutFound
-		}
 		return nil, err
 	}
 
-	if len(orders) == 0 {
+	if len(checkouts) == 0 {
 		return nil, errs.ErrNoCheckoutFound
 	}
 
-	return orders, nil
+	return checkouts, nil
 }
 
 func DeleteCheckoutOrder(userId interface{}) (*string, error) {
@@ -209,10 +229,11 @@ func GetAllOrderPayment() ([]entity.GetOrderPaymentResponse, error) {
 	JOIN category_payments cp ON p.category_payment_id = cp.id
 	ORDER BY p.category_payment_id;`)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errs.ErrNoPaymentFound
-		}
 		return nil, err
+	}
+
+	if len(payments) == 0 {
+		return nil, errs.ErrNoPaymentFound
 	}
 
 	return payments, nil
