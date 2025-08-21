@@ -106,6 +106,7 @@ func main() {
 	// ratings
 	ratings := v1.Group("/ratings")
 	ratings.GET("/:product_id", controller.GetRatingHandler)
+	ratings.POST("/:product_id/:product_variant_id/:order_id", controller.CreateRatingHandler)
 	ratings.GET("/comments/:product_id", controller.GetRatingCommentsHandler)
 
 	// sellers

@@ -18,7 +18,8 @@ func GetAllOrder(userId interface{}) ([]entity.OrderGetResponse, error) {
 	defer cancel()
 
 	var orders []entity.OrderGetResponse
-	err := db.DB.SelectContext(ctx, &orders, `SELECT pay.name AS pay_name, os.name AS os_name, o.product_id, o.product_variant_id, o.quantity, o.total_price, o.order_pretty_id,
+	err := db.DB.SelectContext(ctx, &orders, `SELECT pay.name AS pay_name, o.id AS order_id, os.name AS os_name,
+	o.rating, o.product_id, o.product_variant_id, o.quantity, o.total_price, o.order_pretty_id,
 	s.name AS s_name, s.img as s_img, p.name AS p_name, pi.img AS p_img, p.active,
 	pv.name AS pv_name, pv.interval, i.name AS i_name
 	FROM orders o
@@ -50,7 +51,7 @@ func CreateOrder(id interface{}, order []entity.OrderRequest) (*string, error) {
 	for i, arg := range order {
 		n := i*9 + 1
 		reqData = append(reqData, fmt.Sprintf(`($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, 'INV-' || TO_CHAR(NOW(), 'YYYYMMDD') || '-' ||
-  		LPAD(nextval('order_pretty_id_seq')::text, 4, '0'))`, n, n+1, n+2, n+3, n+4, n+5, n+6, n+7, n+8))
+  		LPAD(nextval('orders_order_pretty_id_seq')::text, 4, '0'))`, n, n+1, n+2, n+3, n+4, n+5, n+6, n+7, n+8))
 		args = append(args, id, arg.PayId, 1, arg.PId, arg.PVId, arg.Note, arg.Quantity, arg.UnitPrice, arg.TotalPrice)
 	}
 	query += strings.Join(reqData, ",")
@@ -78,6 +79,24 @@ func CreateOrder(id interface{}, order []entity.OrderRequest) (*string, error) {
 	}
 
 	return &userId, nil
+}
+
+func UpdateRatingOrder(productId int, productVariantId int, orderId int, userId interface{}) (*bool, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var rating bool
+	err := db.DB.QueryRowContext(ctx, `UPDATE orders SET rating = $1
+	WHERE product_id = $2 AND product_variant_id = $3 AND id = $4 AND user_id = $5
+	RETURNING rating`, true, productId, productVariantId, orderId, userId).Scan(&rating)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errs.ErrNoOrderFound
+		}
+		return nil, err
+	}
+
+	return &rating, nil
 }
 
 func GetAllCheckoutOrder(userId interface{}) ([]entity.GetCheckoutOrderResponse, error) {

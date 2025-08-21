@@ -15,3 +15,8 @@ type RatingComments struct {
 	Comment   string `db:"comment" json:"comment"`
 	CreatedAt string `db:"created_at" json:"created_at"`
 }
+
+type RatingRequest struct {
+	Rating  int    `json:"rating"`
+	Comment string `json:"comment"`
+}
