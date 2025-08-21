@@ -1,12 +1,55 @@
 package model
 
 import (
+	"context"
 	"database/sql"
 	"errors"
+	"time"
 
 	"github.com/MRaihanZ/subcommerce-backend/internal/db"
 	"github.com/MRaihanZ/subcommerce-backend/internal/entity"
+	"github.com/MRaihanZ/subcommerce-backend/internal/errs"
 )
+
+func CreateRating(productId int, productVariantId int, orderId int, userId interface{}, req *entity.RatingRequest) (*int, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var ratingCheck bool
+	err := db.DB.GetContext(ctx, &ratingCheck, `SELECT rating FROM orders
+	WHERE id = $1 AND product_id = $2 AND product_variant_id = $3;
+	`, orderId, productId, productVariantId)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errs.ErrNoRatingFound
+		}
+		return nil, err
+	}
+
+	if ratingCheck {
+		return nil, errs.ErrAlreadyRated
+	}
+
+	var rating int
+
+	err = db.DB.QueryRowContext(ctx, "INSERT INTO ratings (product_id, product_variant_id, user_id, order_id, rating, comment) VALUES ($1, $2, $3, $4, $5, $6) RETURNING rating",
+		productId, productVariantId, userId, orderId, req.Rating, req.Comment).Scan(&rating)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errs.ErrNoRatingFound
+		}
+		return nil, err
+	}
+
+	_, err = UpdateRatingOrder(productId, productVariantId, orderId, userId)
+	if err != nil {
+		if errors.Is(err, errs.ErrNoOrderFound) {
+			return nil, errs.ErrNoOrderFound
+		}
+		return nil, err
+	}
+	return &rating, nil
+}
 
 func GetRatingByProdId(productId int) (*entity.Rating, error) {
 	var rating entity.Rating
