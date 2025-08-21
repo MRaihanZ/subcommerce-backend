@@ -83,7 +83,7 @@ func GetCheckoutOrdersHandler(c *gin.Context) {
 	id := session.Get("user_id")
 	if id == nil {
 		msg := "id null"
-		res := entity.Response[*entity.AddProductCart]{
+		res := entity.Response[error]{
 			Code:   http.StatusUnauthorized,
 			Status: "error",
 			Data:   nil,
