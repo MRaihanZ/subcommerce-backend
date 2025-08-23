@@ -10,8 +10,10 @@ import (
 
 func GetSellerById(id interface{}) (*entity.Seller, error) {
 	var seller entity.Seller
-	err := db.DB.Get(&seller, `SELECT id, name, img, address, sold_products,
-	average_rating, rating_total, rating_count, created_at
+	err := db.DB.Get(&seller, `SELECT id, name, img, address, total_sold_products,
+	average_rating, rating_total, rating_count, current_month_sales, previous_month_sales,
+	current_month_cancellations, previous_month_cancellations, current_month_revenue,
+	previous_month_revenue, current_month, previous_month, created_at
 	FROM sellers WHERE id =  $1`, id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
