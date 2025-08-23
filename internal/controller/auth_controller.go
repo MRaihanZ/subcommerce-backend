@@ -52,8 +52,8 @@ func CreateUserHandler(c *gin.Context) {
 
 	session := sessions.Default(c)
 	session.Set("user_id", user)
+	session.Set("seller_id", "noId")
 	session.Set("csrf_token", csrfToken)
-	session.Set("is_logged_in", true)
 	if err := session.Save(); err != nil {
 		msg := "Failed to save session | " + err.Error()
 		res := entity.Response[*entity.SignIn]{
@@ -144,9 +144,8 @@ func VerifyUserHandler(c *gin.Context) {
 	if seller == nil {
 		session := sessions.Default(c)
 		session.Set("user_id", user.Id)
+		session.Set("seller_id", "noId")
 		session.Set("csrf_token", csrfToken)
-		session.Set("is_logged_in", true)
-		session.Set("seller_id", "no_id")
 		if err := session.Save(); err != nil {
 			msg := "Failed to save session | " + err.Error()
 			res := entity.Response[*entity.SignIn]{
@@ -163,8 +162,6 @@ func VerifyUserHandler(c *gin.Context) {
 		session.Set("user_id", user.Id)
 		session.Set("seller_id", seller)
 		session.Set("csrf_token", csrfToken)
-		session.Set("is_logged_in", true)
-		session.Set("seller_id", seller)
 		if err := session.Save(); err != nil {
 			msg := "Failed to save session | " + err.Error()
 			res := entity.Response[*entity.SignIn]{
@@ -241,6 +238,19 @@ func CreateSellerHandler(c *gin.Context) {
 		return
 	}
 
+	session.Set("seller_id", seller)
+	if err := session.Save(); err != nil {
+		msg := "Failed to save session | " + err.Error()
+		res := entity.Response[*entity.SignIn]{
+			Code:   http.StatusInternalServerError,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusInternalServerError, res)
+		return
+	}
+
 	res := entity.Response[*string]{
 		Code:   http.StatusOK,
 		Status: "ok",
@@ -255,18 +265,6 @@ func CheckStatusHandler(c *gin.Context) {
 	id := session.Get("user_id")
 	if id == nil {
 		msg := "id null"
-		res := entity.Response[error]{
-			Code:   http.StatusUnauthorized,
-			Status: "error",
-			Data:   nil,
-			Error:  &msg,
-		}
-		c.JSON(http.StatusUnauthorized, res)
-		return
-	}
-	idStr, ok := id.(string)
-	if !ok {
-		msg := "id is not string"
 		res := entity.Response[error]{
 			Code:   http.StatusUnauthorized,
 			Status: "error",
@@ -304,10 +302,10 @@ func CheckStatusHandler(c *gin.Context) {
 	}
 
 	var stat entity.Status
-	if sellerStr == "no_id" {
-		stat = entity.Status{Status: "authenticated", SellerId: "no_id", Id: idStr}
+	if sellerStr == "noId" {
+		stat = entity.Status{IsLogin: true, IsSeller: false}
 	} else {
-		stat = entity.Status{Status: "authenticated", SellerId: sellerStr, Id: idStr}
+		stat = entity.Status{IsLogin: true, IsSeller: true}
 	}
 
 	res := entity.Response[entity.Status]{
