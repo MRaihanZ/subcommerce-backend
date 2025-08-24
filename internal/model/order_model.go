@@ -43,6 +43,36 @@ func GetAllOrder(userId interface{}) ([]entity.OrderGetResponse, error) {
 	return orders, nil
 }
 
+func GetOrderBySellerID(sellerId interface{}) ([]entity.OrderGetResponse, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var orders []entity.OrderGetResponse
+	err := db.DB.SelectContext(ctx, &orders, `SELECT pay.name AS pay_name, o.id AS order_id, os.name AS os_name,
+	o.rating, o.product_id, o.product_variant_id, o.quantity, o.total_price, o.order_pretty_id,
+	s.name AS s_name, s.img as s_img, p.name AS p_name, pi.img AS p_img, p.active,
+	pv.name AS pv_name, pv.interval, i.name AS i_name
+	FROM orders o
+	JOIN order_statuses os ON o.order_status_id = os.id
+	JOIN payments pay ON o.payment_id = pay.id
+	JOIN products p ON o.product_id = p.id
+	JOIN product_variants pv ON o.product_variant_id = pv.id
+	JOIN LATERAL (SELECT pi.img FROM product_images pi WHERE p.id = pi.product_id LIMIT 1) pi ON true
+	JOIN sellers s ON p.seller_id = s.id
+	JOIN intervals i ON pv.interval_id = i.id
+	WHERE o.seller_id = $1
+	ORDER BY o.created_at DESC, o.order_pretty_id DESC;`, sellerId)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(orders) == 0 {
+		return nil, errs.ErrNoOrderFound
+	}
+
+	return orders, nil
+}
+
 func CreateOrder(id interface{}, order []entity.OrderRequest) (*string, error) {
 	query := "INSERT INTO orders (user_id, payment_id, order_status_id, product_id, product_variant_id, note, quantity, unit_price, total_price, order_pretty_id) VALUES "
 	args := []interface{}{}

@@ -58,6 +58,52 @@ func GetOrdersHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, res)
 }
 
+func GetOrderSellerHandler(c *gin.Context) {
+	session := sessions.Default(c)
+	id := session.Get("seller_id")
+	if id == nil {
+		msg := "id null"
+		res := entity.Response[error]{
+			Code:   http.StatusUnauthorized,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusUnauthorized, res)
+		return
+	}
+
+	orders, err := model.GetOrderBySellerID(id)
+	if err != nil {
+		var code int
+		var msg string
+		switch {
+		case errors.Is(err, errs.ErrNoOrderFound):
+			code = http.StatusInternalServerError
+			msg = err.Error()
+		default:
+			code = http.StatusInternalServerError
+			msg = "internal server error"
+		}
+		res := entity.Response[error]{
+			Code:   code,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(code, res)
+		return
+	}
+
+	res := entity.Response[[]entity.OrderGetResponse]{
+		Code:   http.StatusOK,
+		Status: "ok",
+		Data:   orders,
+		Error:  nil,
+	}
+	c.JSON(http.StatusOK, res)
+}
+
 func CreateOrderHandler(c *gin.Context) {
 	var req []entity.OrderRequest
 	if err := c.BindJSON(&req); err != nil {

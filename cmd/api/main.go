@@ -87,6 +87,7 @@ func main() {
 	// order
 	order := v1.Group("/orders")
 	order.GET("/", controller.GetOrdersHandler)
+	order.GET("/seller", controller.GetOrderSellerHandler)
 	order.POST("/", controller.CreateOrderHandler)
 	order.PATCH("/:order_id/:status_id", controller.UpdateStatusOrderHandler)
 	order.GET("/checkouts", controller.GetCheckoutOrdersHandler)
