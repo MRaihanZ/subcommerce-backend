@@ -156,16 +156,58 @@ func GetAllProductsSummarize(search string, min int, max int) ([]entity.ProductS
 	return products, nil
 }
 
-func GetAllProductsHotSummarize() ([]entity.ProductSummarize, error) {
+func GetAllProductsHotSummarize(min int, max int) ([]entity.ProductSummarize, error) {
+	baseQuery := `
+		SELECT 
+			p.id AS p_id,
+			p.name AS p_name,
+			p.sold,
+			p.average_rating,
+			s.name AS seller_name,
+			pi.img,
+			pv.id AS pv_id,
+			pv.name AS pv_name,
+			pv.price,
+			pv.discount
+		FROM products p
+		JOIN sellers s ON p.seller_id = s.id
+		JOIN LATERAL (
+			SELECT pi.img
+			FROM product_images pi
+			WHERE pi.product_id = p.id
+			LIMIT 1
+		) pi ON true
+		JOIN LATERAL (
+			SELECT pv.id, pv.name, pv.price, pv.discount
+			FROM product_variants pv
+			WHERE pv.product_id = p.id
+			ORDER BY pv.sold DESC
+			LIMIT 1
+		) pv ON true
+		WHERE p.active = true
+	`
+
+	args := []interface{}{}
+	argPos := 1
+
+	if min > 0 {
+		baseQuery += fmt.Sprintf(" AND pv.price >= $%d", argPos)
+		args = append(args, min)
+		argPos++
+	}
+
+	if max > 0 {
+		baseQuery += fmt.Sprintf(" AND pv.price <= $%d", argPos)
+		args = append(args, max)
+		argPos++
+	}
+
+	baseQuery += `
+		ORDER BY (p.average_rating * p.sold) DESC
+	`
+
 	var products []entity.ProductSummarize
-	err := db.DB.Select(&products, `SELECT p.id AS p_id, p.name AS p_name, p.sold, p.average_rating, 
-						s.name AS seller_name, pi.img, pv.id AS pv_id, pv.name AS pv_name, pv.price, pv.discount
-						FROM products p 
-						JOIN sellers s ON p.seller_id = s.id
-						JOIN LATERAL (SELECT pi.img FROM product_images pi WHERE pi.product_id = p.id LIMIT 1) pi ON true
-						JOIN LATERAL (SELECT pv.id, pv.name, pv.price, pv.discount FROM product_variants pv 
-						WHERE pv.product_id = p.id ORDER BY pv.sold DESC LIMIT 1) pv ON true
-						WHERE p.active = true ORDER BY (p.average_rating * p.sold) DESC;`)
+	err := db.DB.Select(&products, baseQuery, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -177,16 +219,59 @@ func GetAllProductsHotSummarize() ([]entity.ProductSummarize, error) {
 	return products, nil
 }
 
-func GetAllProductsDiscountSummarize() ([]entity.ProductSummarize, error) {
+func GetAllProductsDiscountSummarize(min int, max int) ([]entity.ProductSummarize, error) {
+	baseQuery := `
+		SELECT 
+			p.id AS p_id,
+			p.name AS p_name,
+			p.sold,
+			p.average_rating,
+			s.name AS seller_name,
+			pi.img,
+			pv.id AS pv_id,
+			pv.name AS pv_name,
+			pv.price,
+			pv.discount
+		FROM products p
+		JOIN sellers s ON p.seller_id = s.id
+		JOIN LATERAL (
+			SELECT pi.img
+			FROM product_images pi
+			WHERE pi.product_id = p.id
+			LIMIT 1
+		) pi ON true
+		JOIN LATERAL (
+			SELECT pv.id, pv.name, pv.price, pv.discount
+			FROM product_variants pv
+			WHERE pv.product_id = p.id
+			ORDER BY pv.discount DESC
+			LIMIT 1
+		) pv ON true
+		WHERE p.active = true
+		  AND pv.discount > 0
+	`
+
+	args := []interface{}{}
+	argPos := 1
+
+	if min > 0 {
+		baseQuery += fmt.Sprintf(" AND pv.price >= $%d", argPos)
+		args = append(args, min)
+		argPos++
+	}
+
+	if max > 0 {
+		baseQuery += fmt.Sprintf(" AND pv.price <= $%d", argPos)
+		args = append(args, max)
+		argPos++
+	}
+
+	baseQuery += `
+		ORDER BY pv.discount DESC, p.average_rating DESC, p.sold DESC
+	`
+
 	var products []entity.ProductSummarize
-	err := db.DB.Select(&products, `SELECT p.id AS p_id, p.name AS p_name, p.sold, p.average_rating, s.name AS seller_name,
-						pi.img, pv.id AS pv_id, pv.name AS pv_name, pv.price, pv.discount 
-						FROM products p 
-						JOIN sellers s ON p.seller_id = s.id
-						JOIN LATERAL (SELECT pi.img FROM product_images pi WHERE pi.product_id = p.id LIMIT 1) pi ON true
-						JOIN LATERAL (SELECT pv.id, pv.name, pv.price, pv.discount FROM product_variants pv WHERE pv.product_id = p.id ORDER BY pv.discount DESC LIMIT 1) pv ON true
-						WHERE p.active = true AND pv.discount > 0 
-						ORDER BY pv.discount DESC, p.average_rating DESC, p.sold DESC;`)
+	err := db.DB.Select(&products, baseQuery, args...)
 	if err != nil {
 		return nil, err
 	}

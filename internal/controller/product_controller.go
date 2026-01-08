@@ -150,7 +150,42 @@ func GetProductsHandler(c *gin.Context) {
 }
 
 func GetProductsHotHandler(c *gin.Context) {
-	products, err := model.GetAllProductsHotSummarize()
+	var err error
+	minPriceQuery := c.Query("min")
+	var numMinPriceQuery int
+	if minPriceQuery != "" {
+		numMinPriceQuery, err = strconv.Atoi(minPriceQuery)
+		if err != nil {
+			msg := "wrong query value"
+			res := entity.Response[error]{
+				Code:   http.StatusBadRequest,
+				Status: "error",
+				Data:   nil,
+				Error:  &msg,
+			}
+			c.JSON(http.StatusBadRequest, res)
+			return
+		}
+	}
+
+	maxPriceQuery := c.Query("max")
+	var numMaxPriceQuery int
+	if maxPriceQuery != "" {
+		numMaxPriceQuery, err = strconv.Atoi(maxPriceQuery)
+		if err != nil {
+			msg := "wrong query value"
+			res := entity.Response[error]{
+				Code:   http.StatusBadRequest,
+				Status: "error",
+				Data:   nil,
+				Error:  &msg,
+			}
+			c.JSON(http.StatusBadRequest, res)
+			return
+		}
+	}
+
+	products, err := model.GetAllProductsHotSummarize(numMinPriceQuery, numMaxPriceQuery)
 	if err != nil {
 		msg := err.Error()
 		res := entity.Response[[]entity.ProductSummarize]{
@@ -185,7 +220,42 @@ func GetProductsHotHandler(c *gin.Context) {
 }
 
 func GetProductsDiscountHandler(c *gin.Context) {
-	products, err := model.GetAllProductsDiscountSummarize()
+	var err error
+	minPriceQuery := c.Query("min")
+	var numMinPriceQuery int
+	if minPriceQuery != "" {
+		numMinPriceQuery, err = strconv.Atoi(minPriceQuery)
+		if err != nil {
+			msg := "wrong query value"
+			res := entity.Response[error]{
+				Code:   http.StatusBadRequest,
+				Status: "error",
+				Data:   nil,
+				Error:  &msg,
+			}
+			c.JSON(http.StatusBadRequest, res)
+			return
+		}
+	}
+
+	maxPriceQuery := c.Query("max")
+	var numMaxPriceQuery int
+	if maxPriceQuery != "" {
+		numMaxPriceQuery, err = strconv.Atoi(maxPriceQuery)
+		if err != nil {
+			msg := "wrong query value"
+			res := entity.Response[error]{
+				Code:   http.StatusBadRequest,
+				Status: "error",
+				Data:   nil,
+				Error:  &msg,
+			}
+			c.JSON(http.StatusBadRequest, res)
+			return
+		}
+	}
+
+	products, err := model.GetAllProductsDiscountSummarize(numMinPriceQuery, numMaxPriceQuery)
 	if err != nil {
 		msg := err.Error()
 		res := entity.Response[[]entity.ProductSummarize]{
