@@ -99,6 +99,11 @@ func main() {
 	// products
 	products := v1.Group("/products")
 	products.GET("/", controller.GetProductsHandler)
+	products.POST("/", controller.CreateProductHandler)
+	products.POST("/:product_id/:product_variant_id", controller.CreateProductVariantsHandler)
+	products.PATCH("/:product_id/:product_variant_id", controller.UpdateProductHandler)
+	products.DELETE("/:product_id/:product_variant_id", controller.DeleteProductHandler)
+	products.GET("/seller", controller.GetProductsSellerHandler)
 	products.GET("/:id", controller.GetProductHandler)
 	products.GET("/hot", controller.GetProductsHotHandler)
 	products.GET("/discount", controller.GetProductsDiscountHandler)
@@ -113,6 +118,8 @@ func main() {
 	sellers := v1.Group("/sellers")
 	sellers.GET("/", controller.GetSeller)
 	sellers.GET("/summarize/:product_id", controller.GetSellerSummarize)
+	sellers.PATCH("/", controller.UpdateSellerHandler)
+	sellers.DELETE("/", controller.DeleteSellerHandler)
 
 	// users
 	users := v1.Group("/users")
