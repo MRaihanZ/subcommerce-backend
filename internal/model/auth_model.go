@@ -93,3 +93,15 @@ func GetSellerByEmail(id string) (*string, error) {
 
 	return &seller, nil
 }
+
+func GetAdminByEmail(email string) (*entity.SignIn, error) {
+	var signIn entity.SignIn
+	err := db.DB.Get(&signIn, "SELECT id, email, password FROM admins WHERE email = $1", email)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &signIn, nil
+}
