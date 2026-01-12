@@ -122,7 +122,30 @@ func VerifyUserHandler(c *gin.Context) {
 			c.JSON(http.StatusUnauthorized, res)
 			return
 		}
+		session.Set("user_id", admin.Id)
 		session.Set("admin_id", admin.Id)
+		session.Set("csrf_token", csrfToken)
+
+		if err := session.Save(); err != nil {
+			msg := "Failed to save session | " + err.Error()
+			res := entity.Response[*entity.SignIn]{
+				Code:   http.StatusInternalServerError,
+				Status: "error",
+				Data:   nil,
+				Error:  &msg,
+			}
+			c.JSON(http.StatusInternalServerError, res)
+			return
+		}
+
+		res := entity.Response[*entity.SignIn]{
+			Code:   http.StatusOK,
+			Status: "ok",
+			Data:   admin,
+			Error:  nil,
+		}
+		c.JSON(http.StatusOK, res)
+		return
 	}
 
 	// Get user from database
