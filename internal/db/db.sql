@@ -24,10 +24,19 @@ CREATE TABLE
         name VARCHAR(50) NOT NULL,
         img TEXT DEFAULT '/assets/img/profile1.jpg' NOT NULL,
         address TEXT NOT NULL,
-        sold_products INT DEFAULT 0 NOT NULL,
+        wallet BIGINT DEFAULT 0 NOT NULL,
+        total_sold_products INT DEFAULT 0 NOT NULL,
         average_rating NUMERIC(4, 3) DEFAULT 0 NOT NULL,
         rating_total INT DEFAULT 0 NOT NULL,
         rating_count INT DEFAULT 0 NOT NULL,
+        current_month_sales INT DEFAULT 0 NOT NULL,
+        previous_month_sales INT DEFAULT NULL,
+        current_month_cancellations INT DEFAULT 0 NOT NULL,
+        previous_month_cancellations INT DEFAULT NULL,
+        current_month_revenue BIGINT DEFAULT 0 NOT NULL,
+        previous_month_revenue BIGINT DEFAULT NULL,
+        current_month TIMESTAMP DEFAULT NOW () NOT NULL,
+        previous_month TIMESTAMP DEFAULT NULL,
         created_at TIMESTAMP DEFAULT NOW () NOT NULL
     );
 
@@ -35,6 +44,7 @@ CREATE TABLE
     admins (
         id UUID PRIMARY KEY,
         name VARCHAR(50) NOT NULL,
+        email TEXT NOT NULL,
         password VARCHAR(60) NOT NULL
     );
 
@@ -167,6 +177,7 @@ CREATE TABLE
         product_id INT CONSTRAINT fk_or_product_id REFERENCES products (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
         product_variant_id INT CONSTRAINT fk_or_product_variant_id REFERENCES product_variants (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
         CONSTRAINT uq_or_order_product_product_variant UNIQUE (id, product_id, product_variant_id),
+        payment_link TEXT,
         rating BOOLEAN DEFAULT false NOT NULL,
         note VARCHAR(100),
         quantity SMALLINT DEFAULT 1 NOT NULL,
