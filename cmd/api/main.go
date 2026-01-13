@@ -127,5 +127,22 @@ func main() {
 	users.PATCH("/", controller.UpdateUserHandler)
 	users.DELETE("/", controller.DeleteUserHandler)
 
+	// admins
+	admins := v1.Group("/admins")
+	// admins.GET("/", controller.GetAllAdminsHandler)
+	// admins.POST("/", controller.CreateAdminHandler)
+	// admins.PATCH("/", controller.UpdateAdminHandler)
+	// admins.DELETE("/", controller.DeleteAdminHandler)
+	admins.GET("/users", controller.GetAllUsersHandler)
+	admins.GET("/users/:name", controller.GetUserByAdminHandler)
+	// admins.POST("/users", controller.CreateUserHandler)
+	// admins.PATCH("/users", controller.UpdateUserHandler)
+	// admins.DELETE("/users", controller.DeleteUserHandler)
+	// admins.GET("/sellers", controller.GetAllSellersHandler)
+	// admins.GET("/seller", controller.GetSellerByAdminHandler)
+	// admins.POST("/sellers", controller.CreateSellerHandler)
+	// admins.PATCH("/sellers", controller.UpdateSellerHandler)
+	// admins.DELETE("/sellers", controller.DeleteSellerHandler)
+
 	r.Run(os.Getenv("APP_PORT"))
 }
