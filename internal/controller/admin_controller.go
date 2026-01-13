@@ -1,10 +1,13 @@
 package controller
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/MRaihanZ/subcommerce-backend/internal/entity"
+	"github.com/MRaihanZ/subcommerce-backend/internal/errs"
 	"github.com/MRaihanZ/subcommerce-backend/internal/model"
+	"github.com/MRaihanZ/subcommerce-backend/internal/service"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 )
@@ -59,19 +62,19 @@ func GetAllUsersHandler(c *gin.Context) {
 }
 
 func GetUserByAdminHandler(c *gin.Context) {
-	// session := sessions.Default(c)
-	// id := session.Get("admin_id")
-	// if id == nil || id == "noId" {
-	// 	msg := "id null"
-	// 	res := entity.Response[error]{
-	// 		Code:   http.StatusUnauthorized,
-	// 		Status: "error",
-	// 		Data:   nil,
-	// 		Error:  &msg,
-	// 	}
-	// 	c.JSON(http.StatusUnauthorized, res)
-	// 	return
-	// }
+	session := sessions.Default(c)
+	id := session.Get("admin_id")
+	if id == nil || id == "noId" {
+		msg := "id null"
+		res := entity.Response[error]{
+			Code:   http.StatusUnauthorized,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusUnauthorized, res)
+		return
+	}
 
 	searchQuery := c.Param("name")
 	if searchQuery == "" {
@@ -115,6 +118,151 @@ func GetUserByAdminHandler(c *gin.Context) {
 		Code:   http.StatusOK,
 		Status: "ok",
 		Data:   user,
+		Error:  nil,
+	}
+	c.JSON(http.StatusOK, res)
+}
+
+func CreateUserByAdminHandler(c *gin.Context) {
+	session := sessions.Default(c)
+	id := session.Get("admin_id")
+	if id == nil || id == "noId" {
+		msg := "id null"
+		res := entity.Response[error]{
+			Code:   http.StatusUnauthorized,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusUnauthorized, res)
+		return
+	}
+
+	var req entity.SignUp
+	if err := c.BindJSON(&req); err != nil {
+		msg := err.Error()
+		res := entity.Response[error]{
+			Code:   http.StatusBadRequest,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusBadRequest, res)
+		return
+	}
+	user, err := model.CreateUser(req.Name, req.Email, req.Dob, req.Password)
+	if err != nil {
+		msg := err.Error()
+		res := entity.Response[error]{
+			Code:   http.StatusInternalServerError,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusInternalServerError, res)
+		return
+	}
+
+	if user == nil {
+		msg := "email sudah terdaftar"
+		res := entity.Response[error]{
+			Code:   http.StatusConflict,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusConflict, res)
+		return
+	}
+
+	res := entity.Response[*string]{
+		Code:   http.StatusOK,
+		Status: "ok",
+		Data:   user,
+		Error:  nil,
+	}
+	c.JSON(http.StatusOK, res)
+}
+
+func DeleteUserByAdminHandler(c *gin.Context) {
+	session := sessions.Default(c)
+	idSession := session.Get("admin_id")
+	if idSession == nil || idSession == "noId" {
+		msg := "id null"
+		res := entity.Response[error]{
+			Code:   http.StatusUnauthorized,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusUnauthorized, res)
+		return
+	}
+
+	id := c.Param("id")
+	if id == "" {
+		msg := "wrong query"
+		res := entity.Response[error]{
+			Code:   http.StatusBadRequest,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusBadRequest, res)
+		return
+	}
+
+	deleteImg, err := service.DeleteProfile(id, "user")
+	if err != nil {
+		msg := err.Error()
+		res := entity.Response[error]{
+			Code:   http.StatusInternalServerError,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusInternalServerError, res)
+		return
+	}
+
+	if deleteImg == nil {
+		msg := "user tidak ditemukan"
+		res := entity.Response[error]{
+			Code:   http.StatusInternalServerError,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusInternalServerError, res)
+		return
+	}
+
+	userName, err := model.DeleteUser(id)
+	if err != nil {
+		var code int
+		var msg string
+		switch {
+		case errors.Is(err, errs.ErrUserNotFound):
+			code = http.StatusNotFound
+			msg = err.Error()
+		default:
+			code = http.StatusInternalServerError
+			msg = "internal server error"
+		}
+		res := entity.Response[error]{
+			Code:   code,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(code, res)
+		return
+	}
+
+	res := entity.Response[*string]{
+		Code:   http.StatusOK,
+		Status: "ok",
+		Data:   userName,
 		Error:  nil,
 	}
 	c.JSON(http.StatusOK, res)
