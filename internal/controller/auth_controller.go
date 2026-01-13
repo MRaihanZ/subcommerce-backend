@@ -52,6 +52,7 @@ func CreateUserHandler(c *gin.Context) {
 
 	session := sessions.Default(c)
 	session.Set("user_id", user)
+	session.Set("admin_id", "noId")
 	session.Set("seller_id", "noId")
 	session.Set("csrf_token", csrfToken)
 	if err := session.Save(); err != nil {
