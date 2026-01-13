@@ -136,7 +136,7 @@ func main() {
 	admins.GET("/users", controller.GetAllUsersHandler)
 	admins.GET("/users/:name", controller.GetUserByAdminHandler)
 	admins.POST("/users", controller.CreateUserByAdminHandler)
-	// admins.PATCH("/users/:id", controller.UpdateUserHandler)
+	admins.PATCH("/users/:id", controller.UpdateUserByAdminHandler)
 	admins.DELETE("/users/:id", controller.DeleteUserByAdminHandler)
 	// admins.GET("/sellers", controller.GetAllSellersHandler)
 	// admins.GET("/seller", controller.GetSellerByAdminHandler)

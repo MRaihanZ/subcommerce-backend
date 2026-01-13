@@ -184,6 +184,118 @@ func CreateUserByAdminHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, res)
 }
 
+func UpdateUserByAdminHandler(c *gin.Context) {
+	session := sessions.Default(c)
+	sessionId := session.Get("admin_id")
+	if sessionId == nil || sessionId == "noId" {
+		msg := "id null"
+		res := entity.Response[error]{
+			Code:   http.StatusUnauthorized,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusUnauthorized, res)
+		return
+	}
+
+	id := c.Param("id")
+	if id == "" {
+		msg := "wrong query"
+		res := entity.Response[error]{
+			Code:   http.StatusBadRequest,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusBadRequest, res)
+		return
+	}
+
+	var payload entity.UpdateUser
+	if err := c.ShouldBind(&payload); err != nil {
+		msg := err.Error()
+		res := entity.Response[error]{
+			Code:   http.StatusBadRequest,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusBadRequest, res)
+		return
+	}
+
+	file, err := c.FormFile("img")
+	if err != nil {
+		user, err := model.UpdateUser(id, payload.Name, payload.ImgPath, payload.Email, payload.Password, payload.Dob)
+		if err != nil {
+			msg := err.Error()
+			res := entity.Response[*entity.User]{
+				Code:   http.StatusInternalServerError,
+				Status: "error",
+				Data:   user,
+				Error:  &msg,
+			}
+			c.JSON(http.StatusInternalServerError, res)
+			return
+		}
+
+		res := entity.Response[*entity.User]{
+			Code:   http.StatusOK,
+			Status: "ok",
+			Data:   user,
+			Error:  nil,
+		}
+		c.JSON(http.StatusOK, res)
+	} else {
+		uploadService, err := service.UpdateProfile(file, id, "user", c)
+		if err != nil {
+			msg := err.Error()
+			res := entity.Response[error]{
+				Code:   http.StatusInternalServerError,
+				Status: "error",
+				Data:   nil,
+				Error:  &msg,
+			}
+			c.JSON(http.StatusInternalServerError, res)
+			return
+		}
+
+		if uploadService == nil {
+			msg := "user tidak ditemukan"
+			res := entity.Response[error]{
+				Code:   http.StatusInternalServerError,
+				Status: "error",
+				Data:   nil,
+				Error:  &msg,
+			}
+			c.JSON(http.StatusInternalServerError, res)
+			return
+		}
+
+		user, err := model.UpdateUser(id, payload.Name, *uploadService, payload.Email, payload.Password, payload.Dob)
+		if err != nil {
+			msg := err.Error()
+			res := entity.Response[*entity.User]{
+				Code:   http.StatusInternalServerError,
+				Status: "error",
+				Data:   user,
+				Error:  &msg,
+			}
+			c.JSON(http.StatusInternalServerError, res)
+			return
+		}
+
+		res := entity.Response[*entity.User]{
+			Code:   http.StatusOK,
+			Status: "ok",
+			Data:   user,
+			Error:  nil,
+		}
+		c.JSON(http.StatusOK, res)
+	}
+}
+
 func DeleteUserByAdminHandler(c *gin.Context) {
 	session := sessions.Default(c)
 	idSession := session.Get("admin_id")
