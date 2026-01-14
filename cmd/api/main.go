@@ -129,10 +129,11 @@ func main() {
 
 	// admins
 	admins := v1.Group("/admins")
-	// admins.GET("/", controller.GetAllAdminsHandler)
-	// admins.POST("/", controller.CreateAdminHandler)
-	// admins.PATCH("/", controller.UpdateAdminHandler)
-	// admins.DELETE("/", controller.DeleteAdminHandler)
+	admins.GET("/", controller.GetAllAdminsHandler)
+	admins.GET("/:name", controller.GetAdminHandler)
+	admins.POST("/", controller.CreateAdminHandler)
+	admins.PATCH("/:id", controller.UpdateAdminHandler)
+	admins.DELETE("/:id", controller.DeleteAdminHandler)
 	admins.GET("/users", controller.GetAllUsersHandler)
 	admins.GET("/users/:name", controller.GetUserByAdminHandler)
 	admins.POST("/users", controller.CreateUserByAdminHandler)
