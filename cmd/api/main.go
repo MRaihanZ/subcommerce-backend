@@ -138,11 +138,11 @@ func main() {
 	admins.POST("/users", controller.CreateUserByAdminHandler)
 	admins.PATCH("/users/:id", controller.UpdateUserByAdminHandler)
 	admins.DELETE("/users/:id", controller.DeleteUserByAdminHandler)
-	// admins.GET("/sellers", controller.GetAllSellersHandler)
-	// admins.GET("/seller", controller.GetSellerByAdminHandler)
-	// admins.POST("/sellers", controller.CreateSellerHandler)
-	// admins.PATCH("/sellers", controller.UpdateSellerHandler)
-	// admins.DELETE("/sellers", controller.DeleteSellerHandler)
+	admins.GET("/sellers", controller.GetAllSellersHandler)
+	admins.GET("/sellers/:name", controller.GetSellerByAdminHandler)
+	admins.POST("/sellers/:uid", controller.CreateSellerByAdminHandler)
+	admins.PATCH("/sellers/:id", controller.UpdateSellerByAdminHandler)
+	admins.DELETE("/sellers/:id", controller.DeleteSellerByAdminHandler)
 
 	r.Run(os.Getenv("APP_PORT"))
 }
