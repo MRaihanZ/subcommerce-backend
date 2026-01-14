@@ -3,6 +3,7 @@ package controller
 import (
 	"errors"
 	"net/http"
+	"strconv"
 
 	"github.com/MRaihanZ/subcommerce-backend/internal/entity"
 	"github.com/MRaihanZ/subcommerce-backend/internal/errs"
@@ -1068,4 +1069,463 @@ func DeleteSellerByAdminHandler(c *gin.Context) {
 		Error:  nil,
 	}
 	c.JSON(http.StatusOK, res)
+}
+
+func GetAllProductsHandler(c *gin.Context) {
+	session := sessions.Default(c)
+	idSession := session.Get("admin_id")
+	if idSession == nil || idSession == "noId" {
+		msg := "id null"
+		res := entity.Response[error]{
+			Code:   http.StatusUnauthorized,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusUnauthorized, res)
+		return
+	}
+
+	products, err := model.GetAllProducts()
+	if err != nil {
+		msg := err.Error()
+		res := entity.Response[[]*entity.JsonProductAdd]{
+			Code:   http.StatusInternalServerError,
+			Status: "error",
+			Data:   products,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusInternalServerError, res)
+		return
+	}
+
+	if products == nil {
+		msg := "no products found"
+		res := entity.Response[[]*entity.JsonProductAdd]{
+			Code:   http.StatusNotFound,
+			Status: "error",
+			Data:   products,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusNotFound, res)
+		return
+	}
+
+	res := entity.Response[[]*entity.JsonProductAdd]{
+		Code:   http.StatusOK,
+		Status: "ok",
+		Data:   products,
+		Error:  nil,
+	}
+	c.JSON(http.StatusOK, res)
+}
+
+func GetProductsByAdminHandler(c *gin.Context) {
+	session := sessions.Default(c)
+	idSession := session.Get("admin_id")
+	if idSession == nil || idSession == "noId" {
+		msg := "id null"
+		res := entity.Response[error]{
+			Code:   http.StatusUnauthorized,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusUnauthorized, res)
+		return
+	}
+
+	searchQuery := c.Param("name")
+	if searchQuery == "" {
+		msg := "wrong query"
+		res := entity.Response[error]{
+			Code:   http.StatusBadRequest,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusBadRequest, res)
+		return
+	}
+
+	products, err := model.GetProductsByName(searchQuery)
+	if err != nil {
+		msg := err.Error()
+		res := entity.Response[[]*entity.JsonProductAdd]{
+			Code:   http.StatusInternalServerError,
+			Status: "error",
+			Data:   products,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusInternalServerError, res)
+		return
+	}
+
+	if products == nil {
+		msg := "no products found"
+		res := entity.Response[[]*entity.JsonProductAdd]{
+			Code:   http.StatusNotFound,
+			Status: "error",
+			Data:   products,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusNotFound, res)
+		return
+	}
+
+	res := entity.Response[[]*entity.JsonProductAdd]{
+		Code:   http.StatusOK,
+		Status: "ok",
+		Data:   products,
+		Error:  nil,
+	}
+	c.JSON(http.StatusOK, res)
+}
+
+// func CreateProductByAdminHandler(c *gin.Context) {
+// 	session := sessions.Default(c)
+// 	idSession := session.Get("admin_id")
+// 	if idSession == nil || idSession == "noId" {
+// 		msg := "id null"
+// 		res := entity.Response[error]{
+// 			Code:   http.StatusUnauthorized,
+// 			Status: "error",
+// 			Data:   nil,
+// 			Error:  &msg,
+// 		}
+// 		c.JSON(http.StatusUnauthorized, res)
+// 		return
+// 	}
+
+// 	var req entity.ReqProductAdd
+// 	productJSON := c.PostForm("product")
+// 	if productJSON == "" {
+// 		msg := "missing product data"
+// 		res := entity.Response[error]{
+// 			Code:   http.StatusBadRequest,
+// 			Status: "error",
+// 			Data:   nil,
+// 			Error:  &msg,
+// 		}
+// 		c.JSON(http.StatusBadRequest, res)
+// 		return
+// 	}
+
+// 	if err := json.Unmarshal([]byte(productJSON), &req); err != nil {
+// 		msg := "invalid product"
+// 		res := entity.Response[error]{
+// 			Code:   http.StatusBadRequest,
+// 			Status: "error",
+// 			Data:   nil,
+// 			Error:  &msg,
+// 		}
+// 		c.JSON(http.StatusBadRequest, res)
+// 		return
+// 	}
+
+// 	product, err := model.CreateProduct(id, req)
+// 	if err != nil {
+// 		var code int
+// 		var msg string
+// 		switch {
+// 		case errors.Is(err, errs.ErrNoProductFound):
+// 			code = http.StatusBadRequest
+// 			msg = err.Error()
+// 		default:
+// 			log.Println("err product")
+// 			log.Println(err)
+// 			code = http.StatusInternalServerError
+// 			msg = "internal server error"
+// 		}
+// 		res := entity.Response[error]{
+// 			Code:   code,
+// 			Status: "error",
+// 			Data:   nil,
+// 			Error:  &msg,
+// 		}
+// 		c.JSON(code, res)
+// 		return
+// 	}
+
+// 	_, err = model.CreateProductVariantsAdd(id, *product, req.PVariants)
+// 	if err != nil {
+// 		var code int
+// 		var msg string
+// 		switch {
+// 		case errors.Is(err, errs.ErrNoProductVariantFound):
+// 			code = http.StatusBadRequest
+// 			msg = err.Error()
+// 		default:
+// 			log.Println("err product variant")
+// 			log.Println(err)
+// 			code = http.StatusInternalServerError
+// 			msg = "internal server error"
+// 		}
+// 		res := entity.Response[error]{
+// 			Code:   code,
+// 			Status: "error",
+// 			Data:   nil,
+// 			Error:  &msg,
+// 		}
+// 		c.JSON(code, res)
+// 		return
+// 	}
+
+// 	form, err := c.MultipartForm()
+// 	if err != nil {
+// 		code := http.StatusBadRequest
+// 		msg := "gambar harus di pilih"
+// 		res := entity.Response[error]{
+// 			Code:   code,
+// 			Status: "error",
+// 			Data:   nil,
+// 			Error:  &msg,
+// 		}
+// 		c.JSON(code, res)
+// 		return
+// 	}
+
+// 	files := form.File["images"]
+// 	uploadService, err := service.UpdateImgProduct(files, id, *product, c)
+// 	if err != nil {
+// 		log.Println("err uploadService")
+// 		log.Println(err)
+// 		msg := err.Error()
+// 		res := entity.Response[error]{
+// 			Code:   http.StatusInternalServerError,
+// 			Status: "error",
+// 			Data:   nil,
+// 			Error:  &msg,
+// 		}
+// 		c.JSON(http.StatusInternalServerError, res)
+// 		return
+// 	}
+
+// 	productImages, err := model.CreateProductImages(id, *product, uploadService)
+// 	if err != nil {
+// 		var code int
+// 		var msg string
+// 		switch {
+// 		case errors.Is(err, errs.ErrNoProductVariantFound):
+// 			code = http.StatusBadRequest
+// 			msg = err.Error()
+// 		default:
+// 			log.Println("err product images")
+// 			log.Println(err)
+// 			code = http.StatusInternalServerError
+// 			msg = "internal server error"
+// 		}
+// 		res := entity.Response[error]{
+// 			Code:   code,
+// 			Status: "error",
+// 			Data:   nil,
+// 			Error:  &msg,
+// 		}
+// 		c.JSON(code, res)
+// 		return
+// 	}
+
+// 	res := entity.Response[*int]{
+// 		Code:   http.StatusOK,
+// 		Status: "ok",
+// 		Data:   productImages,
+// 		Error:  nil,
+// 	}
+// 	c.JSON(http.StatusOK, res)
+// }
+
+func UpdateActiveProductHandler(c *gin.Context) {
+	session := sessions.Default(c)
+	idSession := session.Get("admin_id")
+	if idSession == nil || idSession == "noId" {
+		msg := "id null"
+		res := entity.Response[error]{
+			Code:   http.StatusUnauthorized,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusUnauthorized, res)
+		return
+	}
+
+	productId := c.Param("product_id")
+	numProdId, err := strconv.Atoi(productId)
+	if err != nil {
+		msg := "wrong query value"
+		res := entity.Response[error]{
+			Code:   http.StatusBadRequest,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusBadRequest, res)
+		return
+	}
+
+	activeStr := c.Param("active")
+	active, err := strconv.ParseBool(activeStr)
+	if err != nil {
+		msg := "wrong query value"
+		res := entity.Response[error]{
+			Code:   http.StatusBadRequest,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusBadRequest, res)
+		return
+	}
+
+	productVariant, err := model.UpdateActiveProduct(numProdId, active)
+	if err != nil {
+		var code int
+		var msg string
+		switch {
+		case errors.Is(err, errs.ErrNoProductFound):
+			code = http.StatusBadRequest
+			msg = err.Error()
+		default:
+			code = http.StatusInternalServerError
+			msg = "internal server error"
+		}
+		res := entity.Response[error]{
+			Code:   code,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(code, res)
+		return
+	}
+
+	res := entity.Response[*int]{
+		Code:   http.StatusOK,
+		Status: "ok",
+		Data:   productVariant,
+		Error:  nil,
+	}
+	c.JSON(http.StatusOK, res)
+}
+
+func DeleteProductByAdminHandler(c *gin.Context) {
+	session := sessions.Default(c)
+	idSession := session.Get("admin_id")
+	if idSession == nil || idSession == "noId" {
+		msg := "id null"
+		res := entity.Response[error]{
+			Code:   http.StatusUnauthorized,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusUnauthorized, res)
+		return
+	}
+
+	productId := c.Param("product_id")
+	numProdId, err := strconv.Atoi(productId)
+	if err != nil {
+		msg := "wrong query value"
+		res := entity.Response[error]{
+			Code:   http.StatusBadRequest,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusBadRequest, res)
+		return
+	}
+
+	productVariantId := c.Param("product_variant_id")
+	numProdVarId, err := strconv.Atoi(productVariantId)
+	if err != nil {
+		msg := "wrong query value"
+		res := entity.Response[error]{
+			Code:   http.StatusBadRequest,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusBadRequest, res)
+		return
+	}
+
+	stateAction := c.Query("state")
+	switch stateAction {
+	case "product":
+		product, err := model.DeleteProduct(numProdId)
+		if err != nil {
+			var code int
+			var msg string
+			switch {
+			case errors.Is(err, errs.ErrNoProductFound):
+				code = http.StatusInternalServerError
+				msg = err.Error()
+			default:
+				code = http.StatusInternalServerError
+				msg = "internal server error"
+			}
+
+			res := entity.Response[error]{
+				Code:   code,
+				Status: "error",
+				Data:   nil,
+				Error:  &msg,
+			}
+			c.JSON(code, res)
+			return
+		}
+
+		res := entity.Response[*int]{
+			Code:   http.StatusOK,
+			Status: "ok",
+			Data:   product,
+			Error:  nil,
+		}
+		c.JSON(http.StatusOK, res)
+		return
+	case "variant":
+		product, err := model.DeleteProductVariant(numProdId, numProdVarId)
+		if err != nil {
+			var code int
+			var msg string
+			switch {
+			case errors.Is(err, errs.ErrNoProductVariantFound):
+				code = http.StatusInternalServerError
+				msg = err.Error()
+			default:
+				code = http.StatusInternalServerError
+				msg = "internal server error"
+			}
+
+			res := entity.Response[error]{
+				Code:   code,
+				Status: "error",
+				Data:   nil,
+				Error:  &msg,
+			}
+			c.JSON(code, res)
+			return
+		}
+
+		res := entity.Response[*int]{
+			Code:   http.StatusOK,
+			Status: "ok",
+			Data:   product,
+			Error:  nil,
+		}
+		c.JSON(http.StatusOK, res)
+		return
+	default:
+		msg := "wrong query"
+		res := entity.Response[error]{
+			Code:   http.StatusBadRequest,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusBadRequest, res)
+		return
+	}
 }

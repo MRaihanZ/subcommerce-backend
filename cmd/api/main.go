@@ -129,21 +129,33 @@ func main() {
 
 	// admins
 	admins := v1.Group("/admins")
+	// admin management by admin
 	admins.GET("/", controller.GetAllAdminsHandler)
 	admins.GET("/:name", controller.GetAdminHandler)
 	admins.POST("/", controller.CreateAdminHandler)
 	admins.PATCH("/:id", controller.UpdateAdminHandler)
 	admins.DELETE("/:id", controller.DeleteAdminHandler)
+
+	// user management by admin
 	admins.GET("/users", controller.GetAllUsersHandler)
 	admins.GET("/users/:name", controller.GetUserByAdminHandler)
 	admins.POST("/users", controller.CreateUserByAdminHandler)
 	admins.PATCH("/users/:id", controller.UpdateUserByAdminHandler)
 	admins.DELETE("/users/:id", controller.DeleteUserByAdminHandler)
+
+	// seller management by admin
 	admins.GET("/sellers", controller.GetAllSellersHandler)
 	admins.GET("/sellers/:name", controller.GetSellerByAdminHandler)
 	admins.POST("/sellers/:uid", controller.CreateSellerByAdminHandler)
 	admins.PATCH("/sellers/:id", controller.UpdateSellerByAdminHandler)
 	admins.DELETE("/sellers/:id", controller.DeleteSellerByAdminHandler)
+
+	// product management by admin
+	admins.GET("/products", controller.GetAllProductsHandler)
+	admins.GET("/products/:name", controller.GetProductsByAdminHandler)
+	// admins.POST("/products", controller.CreateProductByAdminHandler)
+	admins.PATCH("/products/:product_id/:active", controller.UpdateActiveProductHandler)
+	admins.DELETE("/products/:product_id/:product_variant_id", controller.DeleteProductByAdminHandler)
 
 	r.Run(os.Getenv("APP_PORT"))
 }
