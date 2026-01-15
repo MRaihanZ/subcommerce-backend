@@ -79,9 +79,9 @@ func main() {
 
 	// chats
 	chats := v1.Group("/chats")
-	// chats.GET("/", controller.GetAllConversationsHandler)
+	chats.GET("/", controller.GetAllConversationsHandler)
 	chats.GET("/:id", controller.GetConversationHandler)
-	// chats.GET("/messages/:id", controller.GetMessagesHandler)
+	chats.GET("/messages/:id", controller.GetMessagesHandler)
 	// chats.POST("/messages/:id", controller.CreateMessageHandler)
 
 	// csrf
