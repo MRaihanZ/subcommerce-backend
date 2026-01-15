@@ -77,6 +77,13 @@ func main() {
 	carts.DELETE("/", controller.DeleteCartsHandler)
 	carts.DELETE("/product/:product_id/:product_variant_id", controller.DeleteCartHandler)
 
+	// chats
+	chats := v1.Group("/chats")
+	// chats.GET("/", controller.GetAllConversationsHandler)
+	chats.GET("/:id", controller.GetConversationHandler)
+	// chats.GET("/messages/:id", controller.GetMessagesHandler)
+	// chats.POST("/messages/:id", controller.CreateMessageHandler)
+
 	// csrf
 	csrfRoutes := v1.Group("/csrf")
 	// generate csrf token
