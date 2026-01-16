@@ -212,8 +212,8 @@ CREATE TABLE
         user_id UUID CONSTRAINT fk_co_user_id REFERENCES users (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
         seller_id UUID CONSTRAINT fk_co_seller_id REFERENCES sellers (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
         CONSTRAINT uq_co_user_seller UNIQUE (user_id, seller_id),
-        last_message_at TIMESTAMP DEFAULT NOW () NOT NULL,
-        last_message_content TEXT NOT NULL,
+        last_message_at TIMESTAMP DEFAULT NOW (),
+        last_message_content TEXT,
         created_at TIMESTAMP DEFAULT NOW () NOT NULL
     );
 
@@ -224,7 +224,8 @@ CREATE TABLE
         sender_id UUID NOT NULL, -- UUID of user or seller, no FK by design
         is_user BOOLEAN DEFAULT TRUE NOT NULL,
         content TEXT NOT NULL,
-        sent_at TIMESTAMP DEFAULT NOW () NOT NULL
+        sent_at TIMESTAMP DEFAULT NOW () NOT NULL,
+        CONSTRAINT idx_me_conv_id_sent_id INDEX (conversation_id, sent_at DESC, id DESC)
     );
 
 CREATE TABLE
