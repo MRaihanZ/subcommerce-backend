@@ -22,3 +22,8 @@ type Message struct {
 	Content string `db:"content" json:"content"`
 	SentAt  string `db:"sent_at" json:"sent_at"`
 }
+
+type MessageReceive struct {
+	ConvId  string `db:"conv_id" json:"conv_id"`
+	Content string `db:"content" json:"content"`
+}

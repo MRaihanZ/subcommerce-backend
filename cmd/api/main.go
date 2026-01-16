@@ -82,7 +82,7 @@ func main() {
 	chats.GET("/", controller.GetAllConversationsHandler)
 	chats.GET("/:id", controller.GetConversationHandler)
 	chats.GET("/messages/:id", controller.GetMessagesHandler)
-	// chats.POST("/messages/:id", controller.CreateMessageHandler)
+	chats.POST("/messages/:id", controller.CreateMessageHandler)
 
 	// csrf
 	csrfRoutes := v1.Group("/csrf")

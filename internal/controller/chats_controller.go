@@ -400,63 +400,100 @@ func GetMessagesHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, res)
 }
 
-// func CreateMessageHandler(c *gin.Context) {
-// 	// get session
-// 	session := sessions.Default(c)
-// 	userId := session.Get("user_id")
-// 	sellerId := session.Get("seller_id")
+func CreateMessageHandler(c *gin.Context) {
+	// get session
+	session := sessions.Default(c)
+	userId := session.Get("user_id")
+	sellerId := session.Get("seller_id")
 
-// 	// cek session if not login
-// 	if userId == nil || sellerId == nil {
-// 		msg := "id null"
-// 		res := entity.Response[error]{
-// 			Code:   http.StatusUnauthorized,
-// 			Status: "error",
-// 			Data:   nil,
-// 			Error:  &msg,
-// 		}
-// 		c.JSON(http.StatusUnauthorized, res)
-// 		return
-// 	}
+	// cek session if not login
+	if userId == nil || sellerId == nil {
+		msg := "id null"
+		res := entity.Response[error]{
+			Code:   http.StatusUnauthorized,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusUnauthorized, res)
+		return
+	}
 
-// 	var isUser bool
-// 	stateQuery := c.Query("state")
-// 	switch stateQuery {
-// 	case "user":
-// 		if userId == "noId" {
-// 			msg := "id null"
-// 			res := entity.Response[error]{
-// 				Code:   http.StatusUnauthorized,
-// 				Status: "error",
-// 				Data:   nil,
-// 				Error:  &msg,
-// 			}
-// 			c.JSON(http.StatusUnauthorized, res)
-// 			return
-// 		}
-// 		isUser = true
-// 	case "seller":
-// 		if sellerId == "noId" {
-// 			msg := "id null"
-// 			res := entity.Response[error]{
-// 				Code:   http.StatusUnauthorized,
-// 				Status: "error",
-// 				Data:   nil,
-// 				Error:  &msg,
-// 			}
-// 			c.JSON(http.StatusUnauthorized, res)
-// 			return
-// 		}
-// 		isUser = false
-// 	default:
-// 		msg := "wrong query"
-// 		res := entity.Response[error]{
-// 			Code:   http.StatusBadRequest,
-// 			Status: "error",
-// 			Data:   nil,
-// 			Error:  &msg,
-// 		}
-// 		c.JSON(http.StatusBadRequest, res)
-// 		return
-// 	}
-// }
+	var isUser bool
+	var senderId interface{}
+	stateQuery := c.Query("state")
+	switch stateQuery {
+	case "user":
+		if userId == "noId" {
+			msg := "id null"
+			res := entity.Response[error]{
+				Code:   http.StatusUnauthorized,
+				Status: "error",
+				Data:   nil,
+				Error:  &msg,
+			}
+			c.JSON(http.StatusUnauthorized, res)
+			return
+		}
+		isUser = true
+		senderId = userId
+	case "seller":
+		if sellerId == "noId" {
+			msg := "id null"
+			res := entity.Response[error]{
+				Code:   http.StatusUnauthorized,
+				Status: "error",
+				Data:   nil,
+				Error:  &msg,
+			}
+			c.JSON(http.StatusUnauthorized, res)
+			return
+		}
+		isUser = false
+		senderId = sellerId
+	default:
+		msg := "wrong query"
+		res := entity.Response[error]{
+			Code:   http.StatusBadRequest,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusBadRequest, res)
+		return
+	}
+
+	var req entity.MessageReceive
+	if err := c.BindJSON(&req); err != nil {
+		msg := err.Error()
+		res := entity.Response[error]{
+			Code:   http.StatusBadRequest,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusBadRequest, res)
+		return
+	}
+
+	message, err := model.CreateMessage(req.ConvId, senderId, isUser, req.Content)
+	if err != nil {
+		msg := err.Error()
+		res := entity.Response[error]{
+			Code:   http.StatusInternalServerError,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusInternalServerError, res)
+		return
+	}
+
+	res := entity.Response[*string]{
+		Code:   http.StatusOK,
+		Status: "ok",
+		Data:   message,
+		Error:  nil,
+	}
+	c.JSON(http.StatusOK, res)
+}
