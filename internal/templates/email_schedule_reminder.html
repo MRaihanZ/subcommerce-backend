@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="id">
+	<head>
+		<meta charset="UTF-8" />
+		<title>Pengingat Langganan</title>
+	</head>
+	<body
+		style="
+			margin: 0;
+			padding: 0;
+			background-color: #f4f6f8;
+			font-family: Arial, Helvetica, sans-serif;
+		"
+	>
+		<table
+			width="100%"
+			cellpadding="0"
+			cellspacing="0"
+			style="background-color: #f4f6f8; padding: 24px 0"
+		>
+			<tr>
+				<td align="center">
+					<table
+						width="600"
+						cellpadding="0"
+						cellspacing="0"
+						style="
+							background-color: #ffffff;
+							border-radius: 8px;
+							overflow: hidden;
+							box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+						"
+					>
+						<!-- Header -->
+						<tr>
+							<td
+								style="
+									background-color: #0f172a;
+									padding: 24px;
+									text-align: center;
+								"
+							>
+								<h1
+									style="
+										margin: 0;
+										font-size: 26px;
+										color: #ffffff;
+										letter-spacing: 1px;
+									"
+								>
+									Subcommerce
+								</h1>
+							</td>
+						</tr>
+
+						<!-- Title -->
+						<tr>
+							<td style="padding: 28px 32px 8px 32px">
+								<h2 style="margin: 0; font-size: 20px; color: #111827">
+									Pengingat Langganan
+								</h2>
+							</td>
+						</tr>
+
+						<!-- Basa-basi -->
+						<tr>
+							<td style="padding: 12px 32px 24px 32px">
+								<p
+									style="
+										margin: 0;
+										font-size: 14px;
+										line-height: 1.6;
+										color: #374151;
+									"
+								>
+									Halo {{ .UserName }}, semoga Anda dalam keadaan baik. Kami
+									ingin mengingatkan bahwa langganan Anda masih aktif dan
+									memerlukan perhatian agar layanan tetap berjalan tanpa
+									gangguan.
+								</p>
+							</td>
+						</tr>
+
+						<!-- Detail -->
+						<tr>
+							<td style="padding: 0 32px 24px 32px">
+								<table
+									width="100%"
+									cellpadding="0"
+									cellspacing="0"
+									style="border: 1px solid #e5e7eb; border-radius: 6px"
+								>
+									<tr>
+										<td style="padding: 14px; background-color: #f9fafb">
+											<strong>ID</strong>
+										</td>
+										<td style="padding: 14px">{{ .ID }}</td>
+									</tr>
+									<tr>
+										<td style="padding: 14px; background-color: #f9fafb">
+											<strong>Order ID</strong>
+										</td>
+										<td style="padding: 14px">{{ .OrderID }}</td>
+									</tr>
+									<tr>
+										<td style="padding: 14px; background-color: #f9fafb">
+											<strong>Nama User</strong>
+										</td>
+										<td style="padding: 14px">{{ .UserName }}</td>
+									</tr>
+									<tr>
+										<td style="padding: 14px; background-color: #f9fafb">
+											<strong>Nama Product</strong>
+										</td>
+										<td style="padding: 14px">
+											{{ .ProductName1 }} - {{ .ProductName2 }}
+										</td>
+									</tr>
+									<tr>
+										<td style="padding: 14px; background-color: #f9fafb">
+											<strong>Periode</strong>
+										</td>
+										<td style="padding: 14px">{{ .Subscription }}</td>
+									</tr>
+									<tr>
+										<td style="padding: 14px; background-color: #f9fafb">
+											<strong>Status</strong>
+										</td>
+										<td style="padding: 14px">{{ .Status }}</td>
+									</tr>
+									<tr>
+										<td style="padding: 14px; background-color: #f9fafb">
+											<strong>Tanggal Pemesanan</strong>
+										</td>
+										<td style="padding: 14px">{{ .OrderDate }}</td>
+									</tr>
+									<tr>
+										<td style="padding: 14px; background-color: #f9fafb">
+											<strong>Batas Akhir Pembayaran</strong>
+										</td>
+										<td
+											style="padding: 14px; color: #dc2626; font-weight: bold"
+										>
+											{{ .PaymentDeadline }}
+										</td>
+									</tr>
+								</table>
+							</td>
+						</tr>
+
+						<!-- CTA Button -->
+						<tr>
+							<td style="padding: 8px 32px 32px 32px; text-align: center">
+								<a
+									href="{{ .Domain }}/subscription"
+									style="
+										display: inline-block;
+										padding: 14px 28px;
+										background-color: #2563eb;
+										color: #ffffff;
+										text-decoration: none;
+										font-size: 14px;
+										font-weight: bold;
+										border-radius: 6px;
+									"
+								>
+									Kelola Langganan
+								</a>
+							</td>
+						</tr>
+
+						<!-- Footer notice -->
+						<tr>
+							<td style="padding: 0 32px 16px 32px">
+								<p
+									style="
+										margin: 0;
+										font-size: 12px;
+										color: #6b7280;
+										text-align: center;
+									"
+								>
+									Email ini dikirim ke
+									<strong>{{ .TargetEmail }}</strong> karena telah melakukan
+									pembelian langganan di
+									<a
+										href="{{ .Domain }}"
+										style="color: #2563eb; text-decoration: none"
+									>
+										subcommerce </a
+									>.
+								</p>
+							</td>
+						</tr>
+
+						<!-- Footer -->
+						<tr>
+							<td
+								style="
+									background-color: #f9fafb;
+									padding: 16px;
+									text-align: center;
+								"
+							>
+								<p style="margin: 0; font-size: 12px; color: #6b7280">
+									Developed by MRZ
+								</p>
+							</td>
+						</tr>
+					</table>
+				</td>
+			</tr>
+		</table>
+	</body>
+</html>
