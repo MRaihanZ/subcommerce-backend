@@ -10,6 +10,7 @@ type CartProduct struct {
 	PvName     string `db:"pv_name" json:"pv_name"`
 	PvInterval int    `db:"interval" json:"interval"`
 	PvPrice    int    `db:"price" json:"price"`
+	PvDiscount int    `db:"discount" json:"discount"`
 	PvMinOrder int    `db:"min_order" json:"min_order"`
 	PvStock    int    `db:"stock" json:"stock"`
 	IName      string `db:"i_name" json:"i_name"`

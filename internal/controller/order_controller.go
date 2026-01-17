@@ -59,6 +59,36 @@ func GetOrdersHandler(c *gin.Context) {
 }
 
 func GetOrderSellerHandler(c *gin.Context) {
+	stateAction := c.Query("state")
+	orderCreate := c.Query("order_create")
+	orderID := c.Query("order_id")
+
+	if stateAction != "" && stateAction != "next" && stateAction != "previous" {
+		msg := "invalid state"
+		res := entity.Response[error]{
+			Code:   http.StatusBadRequest,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusBadRequest, res)
+		return
+	}
+
+	if stateAction == "next" || stateAction == "previous" {
+		if orderCreate == "" || orderID == "" {
+			msg := "order_create and order_id are required for next/previous state"
+			res := entity.Response[error]{
+				Code:   http.StatusBadRequest,
+				Status: "error",
+				Data:   nil,
+				Error:  &msg,
+			}
+			c.JSON(http.StatusBadRequest, res)
+			return
+		}
+	}
+
 	session := sessions.Default(c)
 	id := session.Get("seller_id")
 	if id == nil {
@@ -73,13 +103,13 @@ func GetOrderSellerHandler(c *gin.Context) {
 		return
 	}
 
-	orders, err := model.GetOrderBySellerID(id)
+	orders, err := model.GetOrderBySellerID(id, stateAction, orderCreate, orderID)
 	if err != nil {
 		var code int
 		var msg string
 		switch {
 		case errors.Is(err, errs.ErrNoOrderFound):
-			code = http.StatusInternalServerError
+			code = http.StatusNotFound
 			msg = err.Error()
 		default:
 			code = http.StatusInternalServerError
@@ -95,7 +125,7 @@ func GetOrderSellerHandler(c *gin.Context) {
 		return
 	}
 
-	res := entity.Response[[]entity.OrderGetResponse]{
+	res := entity.Response[[]entity.OrderGetResponseBySeller]{
 		Code:   http.StatusOK,
 		Status: "ok",
 		Data:   orders,
@@ -210,7 +240,7 @@ func UpdateStatusOrderHandler(c *gin.Context) {
 		return
 	}
 
-	status, err := model.UpdateStatusOrder(numOrderId, id, numStatusId)
+	status, err := model.UpdateStatusOrder(numOrderId, numStatusId)
 	if err != nil {
 		var code int
 		var msg string

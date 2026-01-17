@@ -7,6 +7,7 @@ type Seller struct {
 	Name                       string     `db:"name" json:"name"`
 	Img                        string     `db:"img" json:"img"`
 	Address                    string     `db:"address" json:"address"`
+	Wallet                     int        `db:"wallet" json:"wallet"`
 	SoldProducts               int        `db:"total_sold_products" json:"total_sold_products"`
 	AverageRating              float32    `db:"average_rating" json:"average_rating"`
 	RatingTotal                int        `db:"rating_total" json:"rating_total"`
@@ -27,6 +28,12 @@ type SellerSummarize struct {
 	Name          string  `db:"name" json:"name"`
 	Img           string  `db:"img" json:"img"`
 	Address       string  `db:"address" json:"address"`
-	Sold          int     `db:"sold_products" json:"sold_products"`
+	Sold          int     `db:"total_sold_products" json:"total_sold_products"`
 	AverageRating float32 `db:"average_rating" json:"average_rating"`
+}
+
+type UpdateSeller struct {
+	Name    string `form:"name"`
+	ImgPath string `form:"imgPath"`
+	Address string `form:"address"`
 }

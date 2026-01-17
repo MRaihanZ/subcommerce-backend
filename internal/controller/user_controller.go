@@ -112,7 +112,7 @@ func UpdateUserHandler(c *gin.Context) {
 		}
 		c.JSON(http.StatusOK, res)
 	} else {
-		uploadService, err := service.UpdateProfile(file, id, c)
+		uploadService, err := service.UpdateProfile(file, id, "user", c)
 		if err != nil {
 			msg := err.Error()
 			res := entity.Response[error]{
@@ -175,7 +175,7 @@ func DeleteUserHandler(c *gin.Context) {
 		return
 	}
 
-	deleteImg, err := service.DeleteProfile(id)
+	deleteImg, err := service.DeleteProfile(id, "user")
 	if err != nil {
 		msg := err.Error()
 		res := entity.Response[error]{
@@ -205,7 +205,7 @@ func DeleteUserHandler(c *gin.Context) {
 		var code int
 		var msg string
 		switch {
-		case errors.Is(err, errs.ErrNoCartProduct):
+		case errors.Is(err, errs.ErrUserNotFound):
 			code = http.StatusNotFound
 			msg = err.Error()
 		default:

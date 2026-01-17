@@ -30,6 +30,25 @@ type OrderGetResponse struct {
 	TotalPrice int    `db:"total_price" json:"total_price"`
 }
 
+type OrderGetResponseBySeller struct {
+	OrderID          int    `db:"order_id" json:"order_id"`
+	OrderPrettyID    string `db:"order_pretty_id" json:"order_pretty_id"`
+	UName            string `db:"u_name" json:"u_name"`
+	UImg             string `db:"u_img" json:"u_img"`
+	ProductID        int    `db:"product_id" json:"product_id"`
+	ProductVariantID int    `db:"product_variant_id" json:"product_variant_id"`
+	PName            string `db:"p_name" json:"p_name"`
+	PvName           string `db:"pv_name" json:"pv_name"`
+	PImg             string `db:"p_img" json:"p_img"`
+	Quantity         int    `db:"quantity" json:"quantity"`
+	Interval         int    `db:"interval" json:"interval"`
+	IName            string `db:"i_name" json:"i_name"`
+	PayName          string `db:"pay_name" json:"pay_name"`
+	OsName           string `db:"os_name" json:"os_name"`
+	TotalPrice       int    `db:"total_price" json:"total_price"`
+	CreatedAt        string `db:"created_at" json:"created_at"`
+}
+
 type OrderCheckout struct {
 	PId        int `db:"product_id" json:"p_id"`
 	PVId       int `db:"product_variant_id" json:"pv_id"`

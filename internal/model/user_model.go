@@ -75,7 +75,7 @@ func DeleteUser(id interface{}) (*string, error) {
 	RETURNING name`, id).Scan(&deletedName)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errs.ErrNoCartProduct
+			return nil, errs.ErrUserNotFound
 		}
 		return nil, err
 	}

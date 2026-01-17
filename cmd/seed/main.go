@@ -35,6 +35,26 @@ func init() {
 	log.Println("Database connected")
 }
 
+func restartSequence() {
+	fmt.Println("")
+	log.Println("+++ Restarting sequences +++")
+	var sequences []string
+	err := DB.Select(&sequences, `SELECT sequence_name
+	FROM information_schema.sequences
+	WHERE sequence_schema = 'public'`)
+	if err != nil {
+		log.Fatalf("Failed to fetch sequences: %v", err)
+	}
+
+	for _, seq := range sequences {
+		_, err := DB.Exec(fmt.Sprintf("ALTER SEQUENCE %s RESTART WITH 1;", seq))
+		if err != nil {
+			log.Printf("Failed to restart sequence %s: %v", seq, err)
+		}
+	}
+	log.Println("=== Complete ===")
+}
+
 func users() {
 	fmt.Println("")
 	log.Println("+++ Seeding users table +++")
@@ -82,7 +102,7 @@ func sellers() {
 	rating_count := []int{100, 32, 30, 89, 59}
 	for i, v := range users {
 		id = uuid.New()
-		_, err := DB.Exec(`INSERT INTO sellers (id, user_id, name, address, sold_products, average_rating, rating_total, rating_count)
+		_, err := DB.Exec(`INSERT INTO sellers (id, user_id, name, address, total_sold_products, average_rating, rating_total, rating_count)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
 			id, v, gofakeit.Name(), gofakeit.Address().Address, sold_products[i], average_rating[i], rating_total[i], rating_count[i])
 		if err != nil {
@@ -103,9 +123,9 @@ func admins() {
 	}
 
 	id := uuid.New()
-	_, err = DB.Exec(`INSERT INTO admins (id, name, password)
-		VALUES ($1, $2, $3)`,
-		id, gofakeit.Name(), hashedPassword)
+	_, err = DB.Exec(`INSERT INTO admins (id, name, email, password)
+		VALUES ($1, $2, $3, $4)`,
+		id, gofakeit.Name(), gofakeit.Email(), hashedPassword)
 	if err != nil {
 		log.Println("insert error: ", err)
 	}
@@ -163,31 +183,38 @@ func product_variants() {
 
 	gofakeit.Seed(0)
 
-	var products []string
-	err := DB.Select(&products, "SELECT id FROM products LIMIT 3")
+	var products []int
+	err := DB.Select(&products, "SELECT id FROM products ORDER BY id ASC LIMIT 3")
 	if err != nil {
 		log.Fatalf("Failed to fetch products: %v", err)
 	}
 
+	intervals := []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}
+	var interval int
 	variants := []string{"A", "B"}
 
 	for _, p := range products {
 		for _, v := range variants {
+			interval = gofakeit.RandomInt(intervals)
 			_, err := DB.Exec(`INSERT INTO product_variants (product_id, interval_id, is_default, name, interval, stock, sold, price)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-				p, 3, false, v, 1, 33, 11, 120000)
+				p, 3, false, v, interval, 33, 11, 120000)
 			if err != nil {
 				log.Println("insert error: ", err)
 			}
 		}
 	}
 
-	def := []int{4, 5}
-
-	for _, d := range def {
+	var productVarDefault []int
+	err = DB.Select(&productVarDefault, "SELECT id FROM products ORDER BY id DESC LIMIT 2")
+	if err != nil {
+		log.Fatalf("Failed to fetch products variant default: %v", err)
+	}
+	for _, d := range productVarDefault {
+		interval = gofakeit.RandomInt(intervals)
 		_, err := DB.Exec(`INSERT INTO product_variants (product_id, interval_id, is_default, name, interval, stock, sold, price)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-			d, 3, true, "default", 1, 100, 200, 240000)
+			d, 3, true, "default", interval, 100, 200, 240000)
 		if err != nil {
 			log.Println("insert error: ", err)
 		}
@@ -336,15 +363,16 @@ func payments() {
 }
 
 func main() {
-	users()
-	sellers()
+	// restartSequence()
+	// users()
+	// sellers()
 	admins()
-	intervals()
-	products()
-	product_variants()
-	product_images()
-	ratings()
-	order_statuses()
-	category_payments()
-	payments()
+	// intervals()
+	// products()
+	// product_variants()
+	// product_images()
+	// ratings()
+	// order_statuses()
+	// category_payments()
+	// payments()
 }

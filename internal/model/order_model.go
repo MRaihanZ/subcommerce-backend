@@ -43,25 +43,74 @@ func GetAllOrder(userId interface{}) ([]entity.OrderGetResponse, error) {
 	return orders, nil
 }
 
-func GetOrderBySellerID(sellerId interface{}) ([]entity.OrderGetResponse, error) {
+func GetOrderBySellerID(sellerId interface{}, stateAction, orderCreated, orderId string) ([]entity.OrderGetResponseBySeller, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	var orders []entity.OrderGetResponse
-	err := db.DB.SelectContext(ctx, &orders, `SELECT pay.name AS pay_name, o.id AS order_id, os.name AS os_name,
-	o.rating, o.product_id, o.product_variant_id, o.quantity, o.total_price, o.order_pretty_id,
-	s.name AS s_name, s.img as s_img, p.name AS p_name, pi.img AS p_img, p.active,
-	pv.name AS pv_name, pv.interval, i.name AS i_name
-	FROM orders o
-	JOIN order_statuses os ON o.order_status_id = os.id
-	JOIN payments pay ON o.payment_id = pay.id
-	JOIN products p ON o.product_id = p.id
-	JOIN product_variants pv ON o.product_variant_id = pv.id
-	JOIN LATERAL (SELECT pi.img FROM product_images pi WHERE p.id = pi.product_id LIMIT 1) pi ON true
-	JOIN sellers s ON p.seller_id = s.id
-	JOIN intervals i ON pv.interval_id = i.id
-	WHERE o.seller_id = $1
-	ORDER BY o.created_at DESC, o.order_pretty_id DESC;`, sellerId)
+	var orders []entity.OrderGetResponseBySeller
+	var query string
+	var args []interface{}
+
+	switch stateAction {
+	case "next":
+		// Get the next order
+		query = `SELECT o.id AS order_id, o.order_pretty_id, u.name AS u_name, u.img AS u_img, o.product_id, 
+		o.product_variant_id, p.name AS p_name, pv.name AS pv_name, pi.img AS p_img, o.quantity,
+		pv.interval, i.name AS i_name, pay.name AS pay_name, os.name AS os_name, o.total_price, o.created_at
+		FROM orders o
+		JOIN order_statuses os ON o.order_status_id = os.id
+		JOIN payments pay ON o.payment_id = pay.id
+		JOIN products p ON o.product_id = p.id
+		JOIN product_variants pv ON o.product_variant_id = pv.id
+		JOIN LATERAL (SELECT pi.img FROM product_images pi WHERE p.id = pi.product_id LIMIT 1) pi ON true
+		JOIN sellers s ON p.seller_id = s.id
+		JOIN users u ON o.user_id = u.id
+		JOIN intervals i ON pv.interval_id = i.id
+		WHERE s.id = $1
+		AND (o.created_at, o.id) <= ($2, $3)
+		ORDER BY o.created_at DESC, o.order_pretty_id DESC
+		LIMIT 10;`
+		args = []interface{}{sellerId, orderCreated, orderId}
+	case "previous":
+		// Get the previous order
+		query = `SELECT o.id AS order_id, o.order_pretty_id, u.name AS u_name, u.img AS u_img, o.product_id, 
+		o.product_variant_id, p.name AS p_name, pv.name AS pv_name, pi.img AS p_img, o.quantity,
+		pv.interval, i.name AS i_name, pay.name AS pay_name, os.name AS os_name, o.total_price, o.created_at
+		FROM orders o
+		JOIN order_statuses os ON o.order_status_id = os.id
+		JOIN payments pay ON o.payment_id = pay.id
+		JOIN products p ON o.product_id = p.id
+		JOIN product_variants pv ON o.product_variant_id = pv.id
+		JOIN LATERAL (SELECT pi.img FROM product_images pi WHERE p.id = pi.product_id LIMIT 1) pi ON true
+		JOIN sellers s ON p.seller_id = s.id
+		JOIN users u ON o.user_id = u.id
+		JOIN intervals i ON pv.interval_id = i.id
+		WHERE s.id = $1
+		AND (o.created_at, o.id) >= ($2, $3)
+		ORDER BY o.created_at ASC, o.order_pretty_id ASC
+		LIMIT 10;`
+		args = []interface{}{sellerId, orderCreated, orderId}
+	default:
+		//get the first order
+		query = `SELECT o.id AS order_id, o.order_pretty_id, u.name AS u_name, u.img AS u_img, o.product_id, 
+		o.product_variant_id, p.name AS p_name, pv.name AS pv_name, pi.img AS p_img, o.quantity,
+		pv.interval, i.name AS i_name, pay.name AS pay_name, os.name AS os_name, o.total_price, o.created_at
+		FROM orders o
+		JOIN order_statuses os ON o.order_status_id = os.id
+		JOIN payments pay ON o.payment_id = pay.id
+		JOIN products p ON o.product_id = p.id
+		JOIN product_variants pv ON o.product_variant_id = pv.id
+		JOIN LATERAL (SELECT pi.img FROM product_images pi WHERE p.id = pi.product_id LIMIT 1) pi ON true
+		JOIN sellers s ON p.seller_id = s.id
+		JOIN users u ON o.user_id = u.id
+		JOIN intervals i ON pv.interval_id = i.id
+		WHERE s.id = $1
+		ORDER BY o.created_at DESC, o.order_pretty_id DESC
+		LIMIT 10;`
+		args = []interface{}{sellerId}
+	}
+
+	err := db.DB.SelectContext(ctx, &orders, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -111,13 +160,13 @@ func CreateOrder(id interface{}, order []entity.OrderRequest) (*string, error) {
 	return &userId, nil
 }
 
-func UpdateStatusOrder(orderId int, userId interface{}, statusId int) (*int, error) {
+func UpdateStatusOrder(orderId int, statusId int) (*int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	err := db.DB.QueryRowContext(ctx, `UPDATE orders SET order_status_id = $1
-	WHERE id = $2 AND user_id = $3
-	RETURNING order_status_id`, statusId, orderId, userId).Scan(&orderId)
+	WHERE id = $2
+	RETURNING order_status_id`, statusId, orderId).Scan(&orderId)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, errs.ErrNoOrderFound

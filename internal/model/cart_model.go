@@ -15,7 +15,7 @@ func GetAllCartProduct(id interface{}) ([]entity.CartProduct, error) {
 	var carts []entity.CartProduct
 	err := db.DB.Select(&carts, `SELECT s.name AS s_name,p.id AS p_id, p.name AS p_name, pi.img, p.active,
 						pv.id AS pv_id, pv.name AS pv_name, pv.interval, pv.stock,
-						i.name AS i_name, c.quantity, pv.price, pv.min_order
+						i.name AS i_name, c.quantity, pv.price, pv.discount, pv.min_order
 						FROM carts c
 						JOIN products p ON c.product_id = p.id
 						JOIN sellers s ON p.seller_id = s.id
