@@ -1,3 +1,18 @@
+-- Find all sequence
+SELECT sequence_name
+FROM information_schema.sequences
+WHERE sequence_schema = 'public';
+
+-- check column information
+SELECT
+  column_name,
+  data_type,
+  is_nullable,
+  column_default
+FROM information_schema.columns
+WHERE table_name = 'conversations'
+ORDER BY ordinal_position;
+
 -- Create table
 CREATE TABLE
     order_statuses (id SERIAL PRIMARY KEY, name VARCHAR(30) NOT NULL);
@@ -32,10 +47,20 @@ CREATE TABLE
     );
 	
 -- Drop table
-DROP TABLE checkout_products;
-DROP TABLE checkouts;
-DROP TABLE checkout_statuses;
-DROP TABLE orders;
+-- DROP TABLE checkout_products;
+-- DROP TABLE checkouts;
+-- DROP TABLE checkout_statuses;
+-- DROP TABLE orders;
+
+-- Add index
+CREATE INDEX idx_me_conv_id_sent_id
+ON messages (conversation_id, sent_at DESC, id DESC);
+
+-- Alter table
+-- Drop not null
+ALTER TABLE conversations
+ALTER COLUMN last_message_at DROP NOT NULL,
+ALTER COLUMN last_message_content DROP NOT NULL;
 	
 -- Add column
 ALTER TABLE orders
@@ -59,15 +84,38 @@ REFERENCES product_variants (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL;
 ALTER TABLE reminder_schedules
 ADD next_warning_send DATE NOT NULL;
 
+ALTER TABLE orders
+ADD payment_link TEXT;
+
 ALTER TABLE ratings
 ADD order_id INT CONSTRAINT fk_ra_order_id REFERENCES orders (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL;
 
 ALTER TABLE orders
 ADD rating BOOLEAN DEFAULT false NOT NULL;
 
+ALTER TABLE sellers
+ADD COLUMN current_month_sales INT DEFAULT 0 NOT NULL,
+ADD COLUMN previous_month_sales INT DEFAULT NULL,
+ADD COLUMN current_month_cancellations INT DEFAULT 0 NOT NULL,
+ADD COLUMN previous_month_cancellations INT DEFAULT NULL,
+ADD COLUMN current_month_income BIGINT DEFAULT 0 NOT NULL,
+ADD COLUMN previous_month_income BIGINT DEFAULT NULL,
+ADD COLUMN current_month TIMESTAMP DEFAULT NOW() NOT NULL,
+ADD COLUMN previous_month TIMESTAMP DEFAULT NULL;
+
+ALTER TABLE sellers
+ADD COLUMN wallet BIGINT DEFAULT 0 NOT NULL;
+
+ALTER TABLE admins
+ADD COLUMN email TEXT NOT NULL;
+
 -- Drop column
-ALTER TABLE orders
-DROP COLUMN order_id;
+-- ALTER TABLE orders
+-- DROP COLUMN order_id;
+
+-- Rename column
+ALTER TABLE sellers
+RENAME COLUMN current_month_income TO current_month_revenue;
 
 -- Create sequence column
 CREATE SEQUENCE orders_order_pretty_id_seq START 1;
@@ -76,15 +124,21 @@ CREATE SEQUENCE orders_order_pretty_id_seq START 1;
 ALTER SEQUENCE orders_id_seq RESTART WITH 1;
 
 -- Drop sequece
-DROP SEQUENCE IF EXISTS orders_order_pretty_id_seq;
+-- DROP SEQUENCE IF EXISTS orders_order_pretty_id_seq;
 
 -- Add constraint
 ALTER TABLE ratings
 ADD CONSTRAINT uq_ra_product_product_variant_user_order UNIQUE (product_id, product_variant_id, user_id, order_id);
 
+ALTER TABLE reminder_schedules
+ADD CONSTRAINT uq_rs_user_product_product_variant UNIQUE (user_id, product_id, product_variant_id);
+
 -- Drop constraint
-ALTER TABLE orders
-DROP CONSTRAINT fk_ra_order_id;
+-- ALTER TABLE orders
+-- DROP CONSTRAINT fk_ra_order_id;
+
+-- ALTER TABLE reminder_schedules
+-- DROP CONSTRAINT uq_rs_user_product;
 
 -- select all data
 SELECT * FROM users;
@@ -102,26 +156,56 @@ SELECT * FROM orders;
 SELECT * FROM order_statuses;
 SELECT * FROM category_payments;
 SELECT * FROM payments;
+SELECT * FROM conversations;
+SELECT * FROM messages;
 
 -- Delete all data
-DELETE FROM users;
-DELETE FROM sellers;
-DELETE FROM admins;
-DELETE FROM intervals;
-DELETE FROM products;
-DELETE FROM product_variants;
-DELETE FROM product_images;
-DELETE FROM ratings;
-DELETE FROM orders;
-DELETE FROM checkout_statuses;
-DELETE FROM category_payments;
-DELETE FROM payments;
+-- DELETE FROM users;
+-- DELETE FROM sellers;
+-- DELETE FROM admins;
+-- DELETE FROM intervals;
+-- DELETE FROM products;
+-- DELETE FROM product_variants;
+-- DELETE FROM product_images;
+-- DELETE FROM ratings;
+-- DELETE FROM orders;
+-- DELETE FROM order_statuses;
+-- DELETE FROM category_payments;
+-- DELETE FROM payments;
+
+
+SELECT p.id AS p_id, p.name AS p_name, p.description, p.sold, 
+						p.average_rating, pi.img, p.active,
+						i.id AS i_id, i.name AS i_name, 
+						pv.id AS pv_id, pv.is_default, pv.name AS pv_name, pv.interval, 
+						pv.stock, pv.sold AS pv_sold, pv.price, pv.discount, pv.min_order
+					FROM products p
+					JOIN product_images pi ON pi.product_id = p.id
+					JOIN product_variants pv ON pv.product_id = p.id
+					JOIN intervals i ON pv.interval_id = i.id
+					JOIN sellers s ON p.seller_id = s.id
+					WHERE s.id = '24b482da-c628-4873-9991-32b10fa717cc' 
+					ORDER BY p.created_at DESC, pv_name ASC;
 
 -- auth user
 SELECT id, email, password FROM users WHERE email = 'test email';
 
 -- auth seller
 SELECT id FROM sellers WHERE user_id = '410bab2b-cb7d-4880-9125-c53c91cc83cf';
+
+-- auth admin
+SELECT id, email, password FROM admins WHERE email = 'teresarath@lynch.info';
+
+-- select all sellers
+SELECT id, name, img, address, created_at
+FROM sellers;
+
+SELECT u.id AS uid, u.name AS uname, s.id AS sid, s.name AS sname, s.img, s.address, s.created_at
+FROM sellers s 
+JOIN users u ON s.user_id = u.id;
+
+-- select all admin
+SELECT id, name, email FROM admins;
 
 -- all product
 SELECT p.id AS p_id, p.name AS p_name, p.sold, p.average_rating, s.name AS seller_name,
@@ -131,6 +215,11 @@ SELECT p.id AS p_id, p.name AS p_name, p.sold, p.average_rating, s.name AS selle
 						JOIN LATERAL (SELECT pi.img FROM product_images pi WHERE pi.product_id = p.id LIMIT 1) pi ON true
 						JOIN LATERAL (SELECT pv.id, pv.name, pv.price, pv.discount FROM product_variants pv WHERE pv.product_id = p.id LIMIT 1) pv ON true
 						WHERE p.active = true;
+
+-- search product
+SELECT p.name, pv.price FROM products p 
+JOIN LATERAL (SELECT pv.id, pv.name, pv.price, pv.discount FROM product_variants pv WHERE pv.product_id = p.id LIMIT 1) pv ON true
+WHERE p.name ILIKE '%ro%' AND pv.price >= 3 AND pv.price <= 1000;
 
 -- hot product
 SELECT p.id AS p_id, p.name AS p_name, p.sold, p.average_rating, 
@@ -160,13 +249,30 @@ SELECT p.id AS p_id, p.name AS p_name, p.description, p.sold, p.average_rating, 
 					JOIN intervals i ON pv.interval_id = i.id
 					WHERE p.active = true AND p.id = 2 ORDER BY pv_name;
 
+-- detail product by seller id
+SELECT p.id AS p_id, p.name AS p_name, p.description, p.sold, p.average_rating, p.rating_count, p.created_at, pi.img, p.active,
+					i.id AS i_id, i.name AS i_name, pv.id AS pv_id, pv.is_default, pv.name AS pv_name, pv.interval, pv.stock, pv.sold AS pv_sold,
+					pv.price, pv.discount, pv.min_order FROM products p
+					JOIN product_images pi ON pi.product_id = p.id
+					JOIN product_variants pv ON pv.product_id = p.id
+					JOIN intervals i ON pv.interval_id = i.id
+					JOIN sellers s ON p.seller_id = s.id
+					WHERE s.id = '24b482da-c628-4873-9991-32b10fa717cc' ORDER BY p.created_at DESC, pv_name ASC;
+
+SELECT pv.name FROM product_variants pv
+JOIN products p ON pv.product_id = p.id
+WHERE p.id = 5 AND p.seller_id = 'c340223f-20b5-4aa6-a978-86ba244e39ad' AND pv.id = 7 LIMIT 1;
+
 -- insert products
 INSERT INTO products (seller_id, name, description, sold, average_rating, rating_total, rating_count)
-VALUES ('f37afefc-8ae3-42f3-9b05-7967e0fb49d8', 'testing min order', 'testing', 100, 3.952, 71, 33);
+VALUES ('24b482da-c628-4873-9991-32b10fa717cc', 'testing no variant', 'testing', 100, 3.952, 71, 33);
 
 -- insert product variants
 INSERT INTO product_variants (product_id, interval_id, is_default, name, interval, stock, sold, price)
-VALUES (6, 3, true, 'default', 3, 100, 100, 70000);
+VALUES (7, 2, true, 'default', 3, 100, 100, 2000);
+
+UPDATE products SET seller_id = '24b482da-c628-4873-9991-32b10fa717cc'
+where id = 6 AND seller_id = 'c36cb9db-b17b-49d5-af3d-23314ec39f9e';
 
 -- update product variants
 UPDATE product_variants SET min_order = 5
@@ -181,9 +287,36 @@ WHERE id = 3;
 UPDATE product_variants SET sold = 99
 WHERE id = 2;
 
+UPDATE product_variants pv SET 
+interval_id = 1, name = 'test 1 varian', interval = 1, stock = 10, 
+sold = 20, price = 3000, discount = 0, min_order = 2
+FROM products p
+WHERE p.seller_id = '24b482da-c628-4873-9991-32b10fa717cc' AND pv.id = 9 AND pv.product_id = 6 RETURNING pv.id;
+
+WITH products_update AS (
+UPDATE products
+SET name = 'testing update', description = 'testing update description', active = false
+WHERE seller_id = '24b482da-c628-4873-9991-32b10fa717cc' AND id = 7
+RETURNING id)
+UPDATE product_variants
+SET stock = 11, discount = 2, price = 1000, min_order = 2, interval = 2, interval_id = 3
+WHERE id = 10 AND product_id IN (SELECT id FROM products_update)
+RETURNING id;
+
+SELECT pi.img FROM product_images pi
+JOIN products p ON pi.product_id = p.id
+WHERE p.seller_id = '24b482da-c628-4873-9991-32b10fa717cc' AND pi.product_id = 1;
+
+INSERT INTO product_variants 
+(product_id, interval_id, is_default, name, interval, stock, price, discount, min_order) VALUES
+()
+
+DELETE FROM product_variants
+WHERE id = 8;
+
 -- insert product images
 INSERT INTO product_images (product_id, img)
-VALUES (6, '/assets/img/item.jpg');
+VALUES (7, '/assets/img/item.jpg');
 
 -- insert ratings
 INSERT INTO ratings (product_id, product_variant_id, user_id, rating, comment)
@@ -238,11 +371,11 @@ UPDATE sellers SET average_rating = 4.243, rating_total = 290, rating_count = 59
 WHERE id = 'd6ce2129-b4de-46a9-935c-aa535c1de717';
 
 -- Select data for seller
-SELECT s.id, s.name, s.img, s.address, s.sold_products,
-s.average_rating, s.rating_total, s.rating_count, s.created_at
-FROM sellers s
-JOIN products p ON p.seller_id = s.id
-WHERE p.id = '2';
+SELECT id, name, img, address, total_sold_products,
+average_rating, rating_total, rating_count, current_month_sales, previous_month_sales,
+current_month_cancellations, previous_month_cancellations, current_month_income,
+previous_month_income, current_month, previous_month, created_at
+FROM sellers WHERE id = 'a2e009cb-6939-4b71-b4aa-7bcedd33c51b';
 
 -- Select data for summarize seller
 SELECT s.id, s.name, s.img, s.sold_products, s.average_rating 
@@ -315,12 +448,76 @@ JOIN intervals i ON pv.interval_id = i.id
 WHERE o.user_id = '410bab2b-cb7d-4880-9125-c53c91cc83cf'
 ORDER BY o.created_at DESC, o.order_pretty_id DESC;
 
+SELECT o.id AS order_id, o.order_pretty_id, u.name AS u_name, u.img AS u_img, o.product_id, 
+o.product_variant_id, p.name AS p_name, pv.name AS pv_name, pi.img AS p_img, o.quantity,
+pv.interval, i.name AS i_name, pay.name AS pay_name, os.name AS os_name, o.total_price, o.created_at
+FROM orders o
+JOIN order_statuses os ON o.order_status_id = os.id
+JOIN payments pay ON o.payment_id = pay.id
+JOIN products p ON o.product_id = p.id
+JOIN product_variants pv ON o.product_variant_id = pv.id
+JOIN LATERAL (SELECT pi.img FROM product_images pi WHERE p.id = pi.product_id LIMIT 1) pi ON true
+JOIN sellers s ON p.seller_id = s.id
+JOIN users u ON o.user_id = u.id
+JOIN intervals i ON pv.interval_id = i.id
+WHERE s.id = '24b482da-c628-4873-9991-32b10fa717cc'
+ORDER BY o.created_at DESC, o.order_pretty_id DESC
+LIMIT 10;
+
+
+SELECT o.id AS order_id, o.order_pretty_id, u.name AS u_name, u.img AS u_img, o.product_id, 
+o.product_variant_id, p.name AS p_name, pv.name AS pv_name, pi.img AS p_img, o.quantity,
+pv.interval, i.name AS i_name, pay.name AS pay_name, os.name AS os_name, o.total_price, o.created_at
+FROM orders o
+JOIN order_statuses os ON o.order_status_id = os.id
+JOIN payments pay ON o.payment_id = pay.id
+JOIN products p ON o.product_id = p.id
+JOIN product_variants pv ON o.product_variant_id = pv.id
+JOIN LATERAL (SELECT pi.img FROM product_images pi WHERE p.id = pi.product_id LIMIT 1) pi ON true
+JOIN sellers s ON p.seller_id = s.id
+JOIN users u ON o.user_id = u.id
+JOIN intervals i ON pv.interval_id = i.id
+WHERE s.id = '24b482da-c628-4873-9991-32b10fa717cc'
+AND (o.created_at, o.id) >= ('2025-08-24 11:07:41.949151', 4)
+ORDER BY o.created_at ASC, o.order_pretty_id ASC
+LIMIT 2;
+
+SELECT o.id FROM orders o
+JOIN products p ON o.product_id = p.id
+JOIN sellers s ON p.seller_id = s.id
+WHERE o.id = 2 AND s.id = '24b482da-c628-4873-9991-32b10fa717cc';
+
 SELECT rating FROM orders
 WHERE id = 4 AND product_id = 3 AND product_variant_id = 5;
+SELECT * FROM orders;
 
-UPDATE orders SET order_status_id = 1 WHERE id = 2;
+UPDATE orders SET order_status_id = 7 WHERE id = 5;
 
 UPDATE orders SET rating = true WHERE id = 3;
+
+-- Conversations
+SELECT * FROM conversations;
+
+SELECT id FROM conversations 
+WHERE user_id = 'e63b8090-f725-449b-801b-83310c558a40' AND seller_id = '24b482da-c628-4873-9991-32b10fa717cc';
+SELECT c.id, c.user_id, c.seller_id, c.last_message_at, c.last_message_content, u.name, u.img
+FROM conversations c
+JOIN users u ON c.user_id = u.id
+WHERE user_id = $1 ORDER BY last_message_at DESC
+
+SELECT * FROM users;
+SELECT id, name, email FROM users WHERE email ILIKE '%markusfeil@kertzmann.net%';
+SELECT id, name FROM sellers WHERE user_id = 'f23ffe7a-4cfb-48ea-b1d2-0a79653f097d';
+
+-- Messages
+SELECT * FROM messages;
+
+SELECT sender_id, is_user, content, sent_at FROM messages
+WHERE conversation_id = '83ec5a09-8d10-4b31-bee9-9f3193a1e9e5'
+ORDER BY sent_at ASC LIMIT 10;
+
+INSERT INTO messages (conversation_id, sender_id, is_user, content)
+VALUES ('83ec5a09-8d10-4b31-bee9-9f3193a1e9e5', '24b482da-c628-4873-9991-32b10fa717cc', false, 'test seller adding message manual')
 
 -- testing
 SELECT * FROM users WHERE id = '410bab2b-cb7d-4880-9125-c53c91cc83cf';
