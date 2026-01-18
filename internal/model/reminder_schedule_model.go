@@ -15,19 +15,24 @@ func FetchReminderBatch(
 	var args []any
 	query := `
 		SELECT
-			id,
-			user_id,
-			product_id,
-			product_variant_id,
-			next_send,
-			next_warning_send,
-			next_remove,
-			last_sent_at,
-			is_over
-		FROM reminder_schedules
-		WHERE last_sent_at IS DISTINCT FROM $1
-		ORDER BY created_at
-		LIMIT $2
+		id,
+		user_id,
+		product_id,
+		product_variant_id,
+		next_send,
+		next_warning_send,
+		next_remove,
+		last_sent_at,
+		is_over
+	FROM reminder_schedules
+	WHERE last_sent_at IS DISTINCT FROM $1
+	AND (
+		next_send::date = $1
+		OR next_warning_send::date = $1
+		OR next_remove::date = $1
+	)
+	ORDER BY created_at
+	LIMIT $2;
 		`
 	args = []any{today, limit}
 
