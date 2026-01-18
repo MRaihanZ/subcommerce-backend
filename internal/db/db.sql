@@ -155,6 +155,8 @@ CREATE TABLE
 -- 8. produk sudah dikirim
 -- 9. produk tidak diterima
 -- 10. pesanan selesai
+-- 11. sedang dalam proses
+-- 12. pembayaran ditolak
 CREATE TABLE
     checkouts (
         id SERIAL PRIMARY KEY,
@@ -177,6 +179,8 @@ CREATE TABLE
         product_id INT CONSTRAINT fk_or_product_id REFERENCES products (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
         product_variant_id INT CONSTRAINT fk_or_product_variant_id REFERENCES product_variants (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
         CONSTRAINT uq_or_order_product_product_variant UNIQUE (id, product_id, product_variant_id),
+        order_uq_id TEXT,
+        order_pretty_id VARCHAR(20),
         payment_link TEXT,
         rating BOOLEAN DEFAULT false NOT NULL,
         note VARCHAR(100),
