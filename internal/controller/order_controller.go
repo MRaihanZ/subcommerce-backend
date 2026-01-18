@@ -8,8 +8,10 @@ import (
 	"github.com/MRaihanZ/subcommerce-backend/internal/entity"
 	"github.com/MRaihanZ/subcommerce-backend/internal/errs"
 	"github.com/MRaihanZ/subcommerce-backend/internal/model"
+	"github.com/MRaihanZ/subcommerce-backend/internal/service"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 func GetOrdersHandler(c *gin.Context) {
@@ -162,7 +164,23 @@ func CreateOrderHandler(c *gin.Context) {
 		return
 	}
 
-	cart, err := model.CreateOrder(id, req)
+	orderID := uuid.New().String()
+	newTotalPrice := int64(req[0].TotalPrice)
+
+	paymentURL, err := service.CreatePayment(orderID, newTotalPrice)
+	if err != nil {
+		msg := err.Error()
+		res := entity.Response[error]{
+			Code:   http.StatusInternalServerError,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusInternalServerError, res)
+		return
+	}
+
+	_, err = model.CreateOrder(id, req, paymentURL)
 	if err != nil {
 		var code int
 		var msg string
@@ -188,10 +206,57 @@ func CreateOrderHandler(c *gin.Context) {
 		return
 	}
 
-	res := entity.Response[*string]{
+	res := entity.Response[string]{
 		Code:   http.StatusOK,
 		Status: "ok",
-		Data:   cart,
+		Data:   paymentURL,
+		Error:  nil,
+	}
+	c.JSON(http.StatusOK, res)
+}
+
+func DeleteOrderHandler(c *gin.Context) {
+	session := sessions.Default(c)
+	id := session.Get("user_id")
+	if id == nil {
+		msg := "id null"
+		res := entity.Response[error]{
+			Code:   http.StatusUnauthorized,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusUnauthorized, res)
+		return
+	}
+
+	_, err := model.DeleteOrder(id)
+	if err != nil {
+		var code int
+		var msg string
+		switch {
+		case errors.Is(err, errs.ErrNoOrderFound):
+			code = http.StatusInternalServerError
+			msg = err.Error()
+		default:
+			code = http.StatusInternalServerError
+			msg = "internal server error"
+		}
+
+		res := entity.Response[error]{
+			Code:   code,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(code, res)
+		return
+	}
+
+	res := entity.Response[string]{
+		Code:   http.StatusOK,
+		Status: "ok",
+		Data:   "success",
 		Error:  nil,
 	}
 	c.JSON(http.StatusOK, res)
@@ -199,19 +264,6 @@ func CreateOrderHandler(c *gin.Context) {
 
 func UpdateStatusOrderHandler(c *gin.Context) {
 	orderId := c.Param("order_id")
-	numOrderId, err := strconv.Atoi(orderId)
-	if err != nil {
-		msg := "wrong query value"
-		res := entity.Response[error]{
-			Code:   http.StatusBadRequest,
-			Status: "error",
-			Data:   nil,
-			Error:  &msg,
-		}
-		c.JSON(http.StatusBadRequest, res)
-		return
-	}
-
 	statusId := c.Param("status_id")
 	numStatusId, err := strconv.Atoi(statusId)
 	if err != nil {
@@ -240,7 +292,7 @@ func UpdateStatusOrderHandler(c *gin.Context) {
 		return
 	}
 
-	status, err := model.UpdateStatusOrder(numOrderId, numStatusId)
+	status, err := model.UpdateStatusOrder(orderId, numStatusId)
 	if err != nil {
 		var code int
 		var msg string
@@ -262,7 +314,7 @@ func UpdateStatusOrderHandler(c *gin.Context) {
 		return
 	}
 
-	res := entity.Response[*int]{
+	res := entity.Response[*string]{
 		Code:   http.StatusOK,
 		Status: "ok",
 		Data:   status,

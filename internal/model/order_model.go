@@ -11,6 +11,7 @@ import (
 	"github.com/MRaihanZ/subcommerce-backend/internal/db"
 	"github.com/MRaihanZ/subcommerce-backend/internal/entity"
 	"github.com/MRaihanZ/subcommerce-backend/internal/errs"
+	"github.com/google/uuid"
 )
 
 func GetAllOrder(userId interface{}) ([]entity.OrderGetResponse, error) {
@@ -19,7 +20,7 @@ func GetAllOrder(userId interface{}) ([]entity.OrderGetResponse, error) {
 
 	var orders []entity.OrderGetResponse
 	err := db.DB.SelectContext(ctx, &orders, `SELECT pay.name AS pay_name, o.id AS order_id, os.name AS os_name,
-	o.rating, o.product_id, o.product_variant_id, o.quantity, o.total_price, o.order_pretty_id,
+	o.rating, o.product_id, o.product_variant_id, o.quantity, o.total_price, o.order_pretty_id, o.note, o.payment_link, o.order_uq_id,
 	s.name AS s_name, s.img as s_img, p.name AS p_name, pi.img AS p_img, p.active,
 	pv.name AS pv_name, pv.interval, i.name AS i_name
 	FROM orders o
@@ -122,16 +123,19 @@ func GetOrderBySellerID(sellerId interface{}, stateAction, orderCreated, orderId
 	return orders, nil
 }
 
-func CreateOrder(id interface{}, order []entity.OrderRequest) (*string, error) {
-	query := "INSERT INTO orders (user_id, payment_id, order_status_id, product_id, product_variant_id, note, quantity, unit_price, total_price, order_pretty_id) VALUES "
+func CreateOrder(id interface{}, order []entity.OrderRequest, paymentUrl string) (*string, error) {
+	query := "INSERT INTO orders (user_id, payment_id, order_status_id, product_id, product_variant_id, payment_link, note, quantity, unit_price, total_price, order_uq_id, order_pretty_id) VALUES "
 	args := []interface{}{}
 	reqData := []string{}
 
+	var orderUqId uuid.UUID
+	orderUqId = uuid.New()
+
 	for i, arg := range order {
 		n := i*9 + 1
-		reqData = append(reqData, fmt.Sprintf(`($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, 'INV-' || TO_CHAR(NOW(), 'YYYYMMDD') || '-' ||
-  		LPAD(nextval('orders_order_pretty_id_seq')::text, 4, '0'))`, n, n+1, n+2, n+3, n+4, n+5, n+6, n+7, n+8))
-		args = append(args, id, arg.PayId, 1, arg.PId, arg.PVId, arg.Note, arg.Quantity, arg.UnitPrice, arg.TotalPrice)
+		reqData = append(reqData, fmt.Sprintf(`($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, 'INV-' || TO_CHAR(NOW(), 'YYYYMMDD') || '-' ||
+  		LPAD(nextval('orders_order_pretty_id_seq')::text, 4, '0'))`, n, n+1, n+2, n+3, n+4, n+5, n+6, n+7, n+8, n+9, n+10))
+		args = append(args, id, arg.PayId, 1, arg.PId, arg.PVId, paymentUrl, arg.Note, arg.Quantity, arg.UnitPrice, arg.TotalPrice, orderUqId)
 	}
 	query += strings.Join(reqData, ",")
 	query += "RETURNING user_id"
@@ -160,12 +164,30 @@ func CreateOrder(id interface{}, order []entity.OrderRequest) (*string, error) {
 	return &userId, nil
 }
 
-func UpdateStatusOrder(orderId int, statusId int) (*int, error) {
+func DeleteOrder(id interface{}) (*string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var returnId string
+
+	err := db.DB.QueryRowContext(ctx, `DELETE FROM checkouts WHERE user_id = $1
+	RETURNING user_id`, id).Scan(&returnId)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errs.ErrNoOrderFound
+		}
+		return nil, err
+	}
+
+	return &returnId, nil
+}
+
+func UpdateStatusOrder(orderId string, statusId int) (*string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	err := db.DB.QueryRowContext(ctx, `UPDATE orders SET order_status_id = $1
-	WHERE id = $2
+	WHERE order_uq_id = $2
 	RETURNING order_status_id`, statusId, orderId).Scan(&orderId)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {

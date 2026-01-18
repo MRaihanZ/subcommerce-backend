@@ -99,9 +99,15 @@ func main() {
 	order.PATCH("/:order_id/:status_id", controller.UpdateStatusOrderHandler)
 	order.GET("/checkouts", controller.GetCheckoutOrdersHandler)
 	order.POST("/checkouts", controller.CreateCheckoutOrderHandler)
+	order.DELETE("/checkouts", controller.DeleteOrderHandler)
 	order.GET("/payments", controller.GetOrderPaymentsHandler)
 	// using product_id and product_variant_id in json
 	order.PATCH("/", controller.UpdateOrderHandler)
+
+	// payment
+	payments := v1.Group("payments")
+	payments.POST("/", controller.CreatePaymentHandler)
+	payments.POST("/webhook", controller.MidtransWebhookHandler)
 
 	// products
 	products := v1.Group("/products")
