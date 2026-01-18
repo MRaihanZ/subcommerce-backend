@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"log"
 	"net/http"
 
 	"github.com/MRaihanZ/subcommerce-backend/internal/entity"
@@ -71,13 +70,8 @@ func MidtransWebhookHandler(c *gin.Context) {
 		return
 	}
 
-	// Debug (optional)
-	log.Println("Midtrans webhook payload:", payload)
-
 	orderID := payload["order_id"].(string)
-	log.Println("Midtrans webhook orderId:", orderID)
 	transactionStatus := payload["transaction_status"].(string)
-	log.Println("Midtrans webhook status:", transactionStatus)
 
 	err := service.HandleWebhook(orderID, transactionStatus)
 	if err != nil {
