@@ -33,13 +33,7 @@ func CreateQrisPaymentLink(orderID string, amount int64, userId interface{}) (st
 		Quantity int    `json:"quantity"`
 		Price    int    `json:"price"`
 	}, 0, (len(data) + 1))
-	var total, afterDiscount int
 	for _, info := range data {
-		total = info.UnitPrice
-		afterDiscount = total - (total*info.Discount)/100
-		if info.Discount != 0 {
-			total = afterDiscount
-		}
 
 		reqBody.ItemDetails = append(reqBody.ItemDetails, struct {
 			Id       string `json:"id"`
@@ -50,7 +44,7 @@ func CreateQrisPaymentLink(orderID string, amount int64, userId interface{}) (st
 			Id:       strconv.Itoa(info.PId),
 			Name:     info.PName,
 			Quantity: info.Quantity,
-			Price:    total,
+			Price:    info.UnitPrice,
 		})
 	}
 	reqBody.ItemDetails = append(reqBody.ItemDetails, struct {
