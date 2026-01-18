@@ -8,22 +8,27 @@ import (
 	"os"
 
 	"github.com/MRaihanZ/subcommerce-backend/internal/entity"
+	"github.com/MRaihanZ/subcommerce-backend/internal/model"
 )
 
-func CreateQrisPaymentLink(orderID string, amount int64) (string, error) {
+func CreateQrisPaymentLink(orderID string, amount int64, userId interface{}) (string, error) {
+	userInfo, _ := model.GetUserPaymentById(userId)
+
 	reqBody := entity.MidtransChargeRequest{
 		PaymentType: "qris",
 	}
 	reqBody.TransactionDetails.OrderID = orderID
 	reqBody.TransactionDetails.GrossAmt = amount
-	reqBody.Expiry.Unit = "minute"
+	reqBody.Expiry.Unit = "minutes"
 	reqBody.Expiry.Duration = 30
+	reqBody.CustomerDetails.FirstName = userInfo.Name
+	reqBody.CustomerDetails.Email = userInfo.Email
 
 	body, _ := json.Marshal(reqBody)
 
 	req, err := http.NewRequest(
 		"POST",
-		"https://api.midtrans.com/v2/payment-links",
+		os.Getenv("MIDTRANS_URL"),
 		bytes.NewBuffer(body),
 	)
 	if err != nil {
@@ -42,19 +47,9 @@ func CreateQrisPaymentLink(orderID string, amount int64) (string, error) {
 	var res map[string]interface{}
 	json.NewDecoder(resp.Body).Decode(&res)
 
-	actions, ok := res["actions"].([]interface{})
-	if !ok || len(actions) == 0 {
-		return "", fmt.Errorf("midtrans response has no actions: %+v", res)
-	}
-
-	action, ok := actions[0].(map[string]interface{})
+	paymentURL, ok := res["payment_url"].(string)
 	if !ok {
-		return "", fmt.Errorf("invalid actions format")
-	}
-
-	paymentURL, ok := action["url"].(string)
-	if !ok {
-		return "", fmt.Errorf("payment url not found")
+		return "", fmt.Errorf("unexpected midtrans response: %v", res)
 	}
 
 	return paymentURL, nil

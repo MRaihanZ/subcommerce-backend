@@ -54,6 +54,19 @@ func GetUserByEmail(email string) (*entity.SignIn, error) {
 	return &signIn, nil
 }
 
+func GetUserPaymentById(id interface{}) (*entity.UserPayment, error) {
+	var user entity.UserPayment
+	err := db.DB.Get(&user, "SELECT name, email FROM users WHERE id = $1", id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &user, nil
+}
+
 func CreateSeller(id interface{}, req entity.CreateSellerRequest) (*string, error) {
 	checkSeller, err := GetSellerById(id)
 	if err != nil {

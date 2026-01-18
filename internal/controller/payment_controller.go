@@ -5,10 +5,25 @@ import (
 
 	"github.com/MRaihanZ/subcommerce-backend/internal/entity"
 	"github.com/MRaihanZ/subcommerce-backend/internal/service"
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 )
 
 func CreatePaymentHandler(c *gin.Context) {
+	session := sessions.Default(c)
+	userId := session.Get("user_id")
+	if userId == nil {
+		msg := "id null"
+		res := entity.Response[error]{
+			Code:   http.StatusUnauthorized,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusUnauthorized, res)
+		return
+	}
+
 	var req entity.CreatePaymentRequest
 	if err := c.BindJSON(&req); err != nil {
 		msg := err.Error()
@@ -22,7 +37,7 @@ func CreatePaymentHandler(c *gin.Context) {
 		return
 	}
 
-	paymentURL, err := service.CreatePayment(req.OrderID, req.Amount)
+	paymentURL, err := service.CreatePayment(req.OrderID, req.Amount, userId)
 	if err != nil {
 		msg := err.Error()
 		res := entity.Response[error]{

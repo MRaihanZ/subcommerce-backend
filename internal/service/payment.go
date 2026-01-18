@@ -1,33 +1,30 @@
 package service
 
 import (
-	"time"
-
 	"github.com/MRaihanZ/subcommerce-backend/internal/model"
 	"github.com/MRaihanZ/subcommerce-backend/internal/utils"
-	"github.com/google/uuid"
 )
 
-func CreatePayment(orderID string, amount int64) (string, error) {
-	paymentURL, err := utils.CreateQrisPaymentLink(orderID, amount)
+func CreatePayment(orderID string, amount int64, userId interface{}) (string, error) {
+	paymentURL, err := utils.CreateQrisPaymentLink(orderID, amount, userId)
 	if err != nil {
 		return "", err
 	}
 
-	payment := &model.Payment{
-		ID:         uuid.New().String(),
-		OrderID:    orderID,
-		Amount:     amount,
-		Status:     "PENDING",
-		PaymentURL: paymentURL,
-		CreatedAt:  time.Now(),
-		ExpiredAt:  time.Now().Add(30 * time.Minute),
-	}
+	// payment := &model.Payment{
+	// 	ID:         uuid.New().String(),
+	// 	OrderID:    orderID,
+	// 	Amount:     amount,
+	// 	Status:     "PENDING",
+	// 	PaymentURL: paymentURL,
+	// 	CreatedAt:  time.Now(),
+	// 	ExpiredAt:  time.Now().Add(30 * time.Minute),
+	// }
 
-	err = model.CreatePayment(payment)
-	if err != nil {
-		return "", err
-	}
+	// err = model.CreatePayment(payment)
+	// if err != nil {
+	// 	return "", err
+	// }
 
 	return paymentURL, nil
 }
