@@ -5,6 +5,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"regexp"
 
 	"github.com/MRaihanZ/subcommerce-backend/internal/entity"
 	"github.com/MRaihanZ/subcommerce-backend/internal/service"
@@ -80,7 +81,12 @@ func MidtransWebhookHandler(c *gin.Context) {
 	// Debug (optional)
 	log.Println("Midtrans webhook payload:", payload)
 
-	orderID := payload["order_id"].(string)
+	rawOrderID := payload["order_id"].(string)
+
+	// remove last "-<digits>"
+	re := regexp.MustCompile(`-\d+$`)
+	orderID := re.ReplaceAllString(rawOrderID, "")
+
 	transactionStatus := payload["transaction_status"].(string)
 
 	err = service.HandleWebhook(orderID, transactionStatus)
