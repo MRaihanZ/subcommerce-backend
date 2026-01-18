@@ -64,6 +64,7 @@ func CreatePaymentHandler(c *gin.Context) {
 
 // used in midtrans, don't change response
 func MidtransWebhookHandler(c *gin.Context) {
+	log.Println("Content-Type:", c.GetHeader("Content-Type"))
 	body, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "cannot read body"})
@@ -78,7 +79,6 @@ func MidtransWebhookHandler(c *gin.Context) {
 
 	// Debug (optional)
 	log.Println("Midtrans webhook payload:", payload)
-	log.Println("Content-Type:", c.GetHeader("Content-Type"))
 
 	orderID := payload["order_id"].(string)
 	transactionStatus := payload["transaction_status"].(string)
