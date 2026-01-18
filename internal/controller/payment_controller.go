@@ -1,6 +1,8 @@
 package controller
 
 import (
+	"encoding/json"
+	"io"
 	"net/http"
 
 	"github.com/MRaihanZ/subcommerce-backend/internal/entity"
@@ -61,8 +63,14 @@ func CreatePaymentHandler(c *gin.Context) {
 
 // used in midtrans, don't change response
 func MidtransWebhookHandler(c *gin.Context) {
+	body, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "cannot read body"})
+		return
+	}
+
 	var payload map[string]interface{}
-	if err := c.ShouldBindJSON(&payload); err != nil {
+	if err := json.Unmarshal(body, &payload); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid payload"})
 		return
 	}
@@ -70,7 +78,7 @@ func MidtransWebhookHandler(c *gin.Context) {
 	orderID := payload["order_id"].(string)
 	transactionStatus := payload["transaction_status"].(string)
 
-	err := service.HandleWebhook(orderID, transactionStatus)
+	err = service.HandleWebhook(orderID, transactionStatus)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
