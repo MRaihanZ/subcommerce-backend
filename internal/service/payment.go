@@ -1,14 +1,16 @@
 package service
 
 import (
+	"regexp"
+
 	"github.com/MRaihanZ/subcommerce-backend/internal/model"
 	"github.com/MRaihanZ/subcommerce-backend/internal/utils"
 )
 
-func CreatePayment(orderID string, amount int64, userId interface{}) (string, error) {
-	paymentURL, err := utils.CreateQrisPaymentLink(orderID, amount, userId)
+func CreatePayment(orderID string, amount int64, userId interface{}) (string, string, error) {
+	paymentURL, orderId, err := utils.CreateQrisPaymentLink(orderID, amount, userId)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	// payment := &model.Payment{
@@ -26,7 +28,7 @@ func CreatePayment(orderID string, amount int64, userId interface{}) (string, er
 	// 	return "", err
 	// }
 
-	return paymentURL, nil
+	return paymentURL, orderId, nil
 }
 
 func HandleWebhook(orderID string, transactionStatus string) error {
@@ -44,7 +46,11 @@ func HandleWebhook(orderID string, transactionStatus string) error {
 		status = 12
 	}
 
-	_, err := model.UpdateStatusOrder(orderID, status)
+	// remove last "-<digits>"
+	re := regexp.MustCompile(`-\d+$`)
+	newOrderID := re.ReplaceAllString(orderID, "")
+
+	_, err := model.UpdateStatusOrder(newOrderID, status)
 
 	return err
 }

@@ -19,4 +19,13 @@ type MidtransChargeRequest struct {
 		FirstName string `json:"first_name"`
 		Email     string `json:"email"`
 	} `json:"customer_details"`
+	ItemDetails []struct {
+		Id       string `json:"id"`
+		Name     string `json:"name"`
+		Quantity int    `json:"quantity"`
+		Price    int    `json:"price"`
+	} `json:"item_details"`
+	QrisDetail struct {
+		Acquirer string `json:"acquirer"`
+	} `json:"qris"`
 }

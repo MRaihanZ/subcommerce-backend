@@ -167,7 +167,7 @@ func CreateOrderHandler(c *gin.Context) {
 	orderID := uuid.New().String()
 	newTotalPrice := int64(req[0].TotalPrice)
 
-	paymentURL, err := service.CreatePayment(orderID, newTotalPrice, id)
+	paymentURL, orderID, err := service.CreatePayment(orderID, newTotalPrice, id)
 	if err != nil {
 		msg := err.Error()
 		res := entity.Response[error]{
@@ -180,7 +180,7 @@ func CreateOrderHandler(c *gin.Context) {
 		return
 	}
 
-	_, err = model.CreateOrder(id, req, paymentURL)
+	_, err = model.CreateOrder(id, req, paymentURL, orderID)
 	if err != nil {
 		var code int
 		var msg string

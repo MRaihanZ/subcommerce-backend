@@ -11,7 +11,6 @@ import (
 	"github.com/MRaihanZ/subcommerce-backend/internal/db"
 	"github.com/MRaihanZ/subcommerce-backend/internal/entity"
 	"github.com/MRaihanZ/subcommerce-backend/internal/errs"
-	"github.com/google/uuid"
 )
 
 func GetAllOrder(userId interface{}) ([]entity.OrderGetResponse, error) {
@@ -123,19 +122,16 @@ func GetOrderBySellerID(sellerId interface{}, stateAction, orderCreated, orderId
 	return orders, nil
 }
 
-func CreateOrder(id interface{}, order []entity.OrderRequest, paymentUrl string) (*string, error) {
+func CreateOrder(id interface{}, order []entity.OrderRequest, paymentUrl string, orderId interface{}) (*string, error) {
 	query := "INSERT INTO orders (user_id, payment_id, order_status_id, product_id, product_variant_id, payment_link, note, quantity, unit_price, total_price, order_uq_id, order_pretty_id) VALUES "
 	args := []interface{}{}
 	reqData := []string{}
-
-	var orderUqId uuid.UUID
-	orderUqId = uuid.New()
 
 	for i, arg := range order {
 		n := i*9 + 1
 		reqData = append(reqData, fmt.Sprintf(`($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, 'INV-' || TO_CHAR(NOW(), 'YYYYMMDD') || '-' ||
   		LPAD(nextval('orders_order_pretty_id_seq')::text, 4, '0'))`, n, n+1, n+2, n+3, n+4, n+5, n+6, n+7, n+8, n+9, n+10))
-		args = append(args, id, arg.PayId, 1, arg.PId, arg.PVId, paymentUrl, arg.Note, arg.Quantity, arg.UnitPrice, arg.TotalPrice, orderUqId)
+		args = append(args, id, arg.PayId, 1, arg.PId, arg.PVId, paymentUrl, arg.Note, arg.Quantity, arg.UnitPrice, arg.TotalPrice, orderId)
 	}
 	query += strings.Join(reqData, ",")
 	query += "RETURNING user_id"
@@ -225,6 +221,33 @@ func GetAllCheckoutOrder(userId interface{}) ([]entity.GetCheckoutOrderResponse,
 	err := db.DB.SelectContext(ctx, &checkouts, `SELECT c.product_id, c.product_variant_id, s.name AS s_name, s.img AS s_img,
 	p.name AS p_name, pi.img AS p_img, pv.name AS pv_name, pv.interval, i.name AS i_name,
 	c.quantity, c.total_price
+	FROM checkouts c
+	JOIN products p ON c.product_id = p.id
+	JOIN LATERAL (SELECT pi.img FROM product_images pi WHERE c.product_id = pi.product_id LIMIT 1) pi ON true
+	JOIN product_variants pv ON c.product_variant_id = pv.id
+	JOIN sellers s ON p.seller_id = s.id
+	JOIN intervals i ON pv.interval_id = i.id
+	WHERE c.user_id = $1 AND p.active = true
+	ORDER BY c.created_at DESC;`, userId)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(checkouts) == 0 {
+		return nil, errs.ErrNoCheckoutFound
+	}
+
+	return checkouts, nil
+}
+
+func GetAllCheckoutOrderPayment(userId interface{}) ([]entity.GetCheckoutOrderPaymentResponse, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var checkouts []entity.GetCheckoutOrderPaymentResponse
+	err := db.DB.SelectContext(ctx, &checkouts, `SELECT c.product_id, c.product_variant_id, s.name AS s_name, s.img AS s_img,
+	p.name AS p_name, pi.img AS p_img, pv.name AS pv_name, pv.interval, i.name AS i_name, pv.discount,
+	c.quantity, c.total_price, c.unit_price
 	FROM checkouts c
 	JOIN products p ON c.product_id = p.id
 	JOIN LATERAL (SELECT pi.img FROM product_images pi WHERE c.product_id = pi.product_id LIMIT 1) pi ON true
