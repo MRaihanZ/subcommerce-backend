@@ -72,7 +72,9 @@ func MidtransWebhookHandler(c *gin.Context) {
 	log.Println("Midtrans webhook payload:", payload)
 
 	orderID := payload["order_id"].(string)
+	log.Println("Midtrans webhook orderId:", orderID)
 	transactionStatus := payload["transaction_status"].(string)
+	log.Println("Midtrans webhook status:", transactionStatus)
 
 	err := service.HandleWebhook(orderID, transactionStatus)
 	if err != nil {
