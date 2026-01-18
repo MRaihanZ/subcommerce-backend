@@ -3,6 +3,7 @@ package controller
 import (
 	"encoding/json"
 	"io"
+	"log"
 	"net/http"
 
 	"github.com/MRaihanZ/subcommerce-backend/internal/entity"
@@ -74,6 +75,10 @@ func MidtransWebhookHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid payload"})
 		return
 	}
+
+	// Debug (optional)
+	log.Println("Midtrans webhook payload:", payload)
+	log.Println("Content-Type:", c.GetHeader("Content-Type"))
 
 	orderID := payload["order_id"].(string)
 	transactionStatus := payload["transaction_status"].(string)
