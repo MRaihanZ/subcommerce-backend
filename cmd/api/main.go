@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/MRaihanZ/subcommerce-backend/internal/controller"
 	"github.com/MRaihanZ/subcommerce-backend/internal/db"
@@ -48,13 +49,19 @@ func main() {
 	r.Use(session.CorsMiddleware(), sessions.Sessions("session_id", store))
 
 	// CSRF middleware
-	r.Use(csrf.Middleware(csrf.Options{
-		Secret: string(decodeBase64(os.Getenv("CSRF_SECRET"))),
-		ErrorFunc: func(c *gin.Context) {
-			c.JSON(400, gin.H{"error": "CSRF token mismatch"})
-			c.Abort()
-		},
-	}))
+	r.Use(func(c *gin.Context) {
+		if strings.HasPrefix(c.Request.URL.Path, "/api/v1/payments/webhook") {
+			c.Next()
+			return
+		}
+		csrf.Middleware(csrf.Options{
+			Secret: string(decodeBase64(os.Getenv("CSRF_SECRET"))),
+			ErrorFunc: func(c *gin.Context) {
+				c.JSON(400, gin.H{"error": "CSRF token mismatch"})
+				c.Abort()
+			},
+		})(c)
+	})
 
 	db.InitDB(os.Getenv("DB_USER"), os.Getenv("DB_PASS"), os.Getenv("DB_HOST"), os.Getenv("DB_PORT"), os.Getenv("DB_NAME"))
 
