@@ -157,6 +157,9 @@ CREATE TABLE
 -- 10. pesanan selesai
 -- 11. sedang dalam proses
 -- 12. pembayaran ditolak
+-- 13. pembayaran langganan
+-- 14. langganan dibatalkan user
+-- 15. langganan dibatalkan seller
 CREATE TABLE
     checkouts (
         id SERIAL PRIMARY KEY,
@@ -179,8 +182,8 @@ CREATE TABLE
         product_id INT CONSTRAINT fk_or_product_id REFERENCES products (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
         product_variant_id INT CONSTRAINT fk_or_product_variant_id REFERENCES product_variants (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
         CONSTRAINT uq_or_order_product_product_variant UNIQUE (id, product_id, product_variant_id),
-        order_uq_id TEXT,
-        order_pretty_id VARCHAR(20),
+        order_uq_id TEXT CONSTRAINT uq_or_order_uq_id UNIQUE,
+        order_pretty_id VARCHAR(20) CONSTRAINT uq_or_order_pretty_id UNIQUE,
         payment_link TEXT,
         rating BOOLEAN DEFAULT false NOT NULL,
         note VARCHAR(100),
@@ -190,14 +193,11 @@ CREATE TABLE
         created_at TIMESTAMP DEFAULT NOW () NOT NULL
     );
 
-ALTER TABLE orders
-ADD COLUMN order_pretty_id VARCHAR(50) CONSTRAINT uq_or_order_pretty_id UNIQUE;
-
 CREATE SEQUENCE order_pretty_id_seq START 1;
 
 CREATE TABLE
     reminder_schedules (
-        id UUID PRIMARY KEY,
+        id UUID PRIMARY KEY CONSTRAINT fk_rs_id REFERENCES orders (order_uq_id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
         user_id UUID CONSTRAINT fk_rs_user_id REFERENCES users (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
         product_id INT CONSTRAINT fk_rs_product_id REFERENCES products (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
         product_variant_id INT CONSTRAINT fk_rs_product_variant_id REFERENCES product_variants (id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,

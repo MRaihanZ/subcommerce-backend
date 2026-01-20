@@ -362,11 +362,47 @@ func payments() {
 	log.Println("=== Complete ===")
 }
 
+func fixingUniqueFkOrRsColumn() {
+	fmt.Println("")
+	log.Println("+++ Fixing and seeding orders table +++")
+	var id uuid.UUID
+
+	searchId := "d4faa424-dddb-4dd3-a4c5-272214cf4ace"
+	var err error
+
+	var selectId []int64
+	err = DB.Select(&selectId, `SELECT id
+		FROM orders
+		WHERE order_uq_id = $1
+		ORDER BY id`, searchId)
+	if err != nil {
+		log.Println("select error: ", err)
+	}
+
+	if len(selectId) == 0 {
+		log.Println("no data found in select: ", err)
+	}
+	log.Println("ID LIST: ", selectId)
+
+	for _, v := range selectId {
+		id = uuid.New()
+		_, err = DB.Exec(`
+		UPDATE orders
+		SET order_uq_id = $1 
+		WHERE order_uq_id = $2 AND id = $3`, id, searchId, v)
+		if err != nil {
+			log.Println("insert error: ", err)
+			break
+		}
+	}
+	log.Println("=== Complete ===")
+}
+
 func main() {
 	// restartSequence()
 	// users()
 	// sellers()
-	admins()
+	// admins()
 	// intervals()
 	// products()
 	// product_variants()
@@ -375,4 +411,5 @@ func main() {
 	// order_statuses()
 	// category_payments()
 	// payments()
+	// fixingUniqueFkOrRsColumn()
 }

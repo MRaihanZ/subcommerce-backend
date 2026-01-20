@@ -141,6 +141,11 @@ func main() {
 	sellers.PATCH("/", controller.UpdateSellerHandler)
 	sellers.DELETE("/", controller.DeleteSellerHandler)
 
+	// subscription
+	subscriptions := v1.Group("/subscriptions")
+	subscriptions.GET("/", controller.GetAllSubscriptionsByUserHandler)
+	subscriptions.DELETE("/:order_id", controller.DeleteSubscription)
+
 	// users
 	users := v1.Group("/users")
 	users.GET("/", controller.GetUserHandler)

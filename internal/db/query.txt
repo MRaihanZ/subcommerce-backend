@@ -127,11 +127,17 @@ ALTER SEQUENCE orders_id_seq RESTART WITH 1;
 -- DROP SEQUENCE IF EXISTS orders_order_pretty_id_seq;
 
 -- Add constraint
+ALTER TABLE orders
+ADD CONSTRAINT uq_or_order_uq_id UNIQUE (order_uq_id);
+
 ALTER TABLE ratings
 ADD CONSTRAINT uq_ra_product_product_variant_user_order UNIQUE (product_id, product_variant_id, user_id, order_id);
 
 ALTER TABLE reminder_schedules
 ADD CONSTRAINT uq_rs_user_product_product_variant UNIQUE (user_id, product_id, product_variant_id);
+
+ALTER TABLE reminder_schedules
+ADD CONSTRAINT fk_rs_id FOREIGN KEY (id) REFERENCES orders (order_uq_id) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- Drop constraint
 -- ALTER TABLE orders
@@ -518,6 +524,25 @@ ORDER BY sent_at ASC LIMIT 10;
 
 INSERT INTO messages (conversation_id, sender_id, is_user, content)
 VALUES ('83ec5a09-8d10-4b31-bee9-9f3193a1e9e5', '24b482da-c628-4873-9991-32b10fa717cc', false, 'test seller adding message manual')
+
+-- Reminder Schedule / Subscription
+SELECT 
+rs.id, rs.product_id, rs.product_variant_id, rs.last_sent_at, rs.next_send, rs.next_warning_send, rs.next_remove, rs.is_over,
+o.order_pretty_id, pay.name AS payment_name, os.name AS order_status_name,
+s.name AS seller_name, s.img as seller_img,
+p.name AS product_name, pv.name AS product_variant_name, pi.img AS product_img, 
+o.quantity, o.note, pv.price, pv.discount, pv.interval, i.name AS i_name
+	FROM reminder_schedules rs
+  JOIN orders o ON rs.id = o.order_uq_id
+	JOIN order_statuses os ON o.order_status_id = os.id
+	JOIN payments pay ON o.payment_id = pay.id
+	JOIN products p ON o.product_id = p.id
+	JOIN product_variants pv ON o.product_variant_id = pv.id
+	JOIN LATERAL (SELECT pi.img FROM product_images pi WHERE p.id = pi.product_id LIMIT 1) pi ON true
+	JOIN sellers s ON p.seller_id = s.id
+	JOIN intervals i ON pv.interval_id = i.id
+	WHERE rs.user_id = 'e63b8090-f725-449b-801b-83310c558a40'
+	ORDER BY rs.created_at DESC, o.order_pretty_id DESC;
 
 -- testing
 SELECT * FROM users WHERE id = '410bab2b-cb7d-4880-9125-c53c91cc83cf';
