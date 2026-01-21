@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"regexp"
@@ -17,7 +16,6 @@ import (
 func CreateQrisPaymentLink(orderID string, amount int64, userId interface{}, state string, orderProductData *entity.GetCheckoutOrderPaymentResponse) (string, string, error) {
 	userInfo, _ := model.GetUserPaymentById(userId)
 	data, _ := model.GetAllCheckoutOrderPayment(userId)
-	log.Println("finish get data")
 
 	reqBody := entity.MidtransChargeRequest{}
 	reqBody.EnablePayments = append(reqBody.EnablePayments, "other_qris")
@@ -62,11 +60,8 @@ func CreateQrisPaymentLink(orderID string, amount int64, userId interface{}, sta
 	reqBody.QrisDetail.Acquirer = "gopay"
 	reqBody.Callbacks.Finish = os.Getenv("WEBSITE_URL") + "/order-list"
 
-	log.Println("finish fill req")
-
 	body, _ := json.Marshal(reqBody)
 
-	log.Println("start request to midtrans")
 	req, err := http.NewRequest(
 		"POST",
 		os.Getenv("MIDTRANS_URL"),
@@ -87,8 +82,6 @@ func CreateQrisPaymentLink(orderID string, amount int64, userId interface{}, sta
 
 	var res map[string]interface{}
 	json.NewDecoder(resp.Body).Decode(&res)
-
-	log.Println(res)
 
 	paymentURL, ok := res["payment_url"].(string)
 	if !ok {
