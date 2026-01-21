@@ -138,7 +138,19 @@ func GetOrderSellerHandler(c *gin.Context) {
 
 func CreateOrderHandler(c *gin.Context) {
 	var req []entity.OrderRequest
-	var reqSubs entity.OrderSubscriptionResponse
+	// check req bind json
+	if err := c.BindJSON(&req); err != nil {
+		msg := err.Error()
+		res := entity.Response[error]{
+			Code:   http.StatusBadRequest,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusBadRequest, res)
+		return
+	}
+
 	var paymentURL, orderID string
 	var err error
 
@@ -159,72 +171,16 @@ func CreateOrderHandler(c *gin.Context) {
 	orderID = uuid.New().String()
 	newTotalPrice := int64(req[0].TotalPrice)
 
-	stateQuery := c.Query("state")
-	switch stateQuery {
-	case "order":
-		// check req bind json
-		if err := c.BindJSON(&req); err != nil {
-			msg := err.Error()
-			res := entity.Response[error]{
-				Code:   http.StatusBadRequest,
-				Status: "error",
-				Data:   nil,
-				Error:  &msg,
-			}
-			c.JSON(http.StatusBadRequest, res)
-			return
-		}
-
-		paymentURL, orderID, err = service.CreatePayment(orderID, newTotalPrice, id, "order", nil)
-		if err != nil {
-			msg := err.Error()
-			res := entity.Response[error]{
-				Code:   http.StatusInternalServerError,
-				Status: "error",
-				Data:   nil,
-				Error:  &msg,
-			}
-			c.JSON(http.StatusInternalServerError, res)
-			return
-		}
-	case "subscription":
-		// check reqSubs and bind json
-		if err := c.BindJSON(&reqSubs); err != nil {
-			msg := err.Error()
-			res := entity.Response[error]{
-				Code:   http.StatusBadRequest,
-				Status: "error",
-				Data:   nil,
-				Error:  &msg,
-			}
-			c.JSON(http.StatusBadRequest, res)
-			return
-		}
-
-		// fill req variable
-		req = append(req, reqSubs.OrderRequest)
-
-		paymentURL, orderID, err = service.CreatePayment(orderID, newTotalPrice, id, "subscription", &reqSubs.OrderPaymentRequest)
-		if err != nil {
-			msg := err.Error()
-			res := entity.Response[error]{
-				Code:   http.StatusInternalServerError,
-				Status: "error",
-				Data:   nil,
-				Error:  &msg,
-			}
-			c.JSON(http.StatusInternalServerError, res)
-			return
-		}
-	default:
-		msg := "wrong query"
+	paymentURL, orderID, err = service.CreatePayment(orderID, newTotalPrice, id, "order", nil)
+	if err != nil {
+		msg := err.Error()
 		res := entity.Response[error]{
-			Code:   http.StatusBadRequest,
+			Code:   http.StatusInternalServerError,
 			Status: "error",
 			Data:   nil,
 			Error:  &msg,
 		}
-		c.JSON(http.StatusBadRequest, res)
+		c.JSON(http.StatusInternalServerError, res)
 		return
 	}
 

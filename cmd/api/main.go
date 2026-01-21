@@ -113,7 +113,7 @@ func main() {
 
 	// payment
 	payments := v1.Group("payments")
-	payments.POST("/", controller.CreatePaymentHandler)
+	// payments.POST("/", controller.CreatePaymentHandler)
 	payments.POST("/webhook", controller.MidtransWebhookHandler)
 
 	// products
