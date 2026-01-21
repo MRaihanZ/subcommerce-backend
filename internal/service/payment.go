@@ -40,7 +40,7 @@ func HandleWebhook(orderID string, transactionStatus string) error {
 	re := regexp.MustCompile(`-\d+$`)
 	newOrderID := re.ReplaceAllString(orderID, "")
 
-	check, err := model.GetExistingOrderSubscription(orderID)
+	check, err := model.GetExistingOrderSubscription(newOrderID)
 	if err != nil {
 		log.Println("ERROR IN PAYMENT WEBHOOK, WHEN CHECKING EXISTING ORDER: ", err)
 	}
