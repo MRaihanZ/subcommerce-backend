@@ -168,6 +168,33 @@ func CreateOrderHandler(c *gin.Context) {
 		return
 	}
 
+	for _, v := range req {
+		exist, err := model.GetExistingOrderSubscriptionByUserId(id, v.PId, v.PVId)
+		if err != nil {
+			msg := err.Error()
+			res := entity.Response[error]{
+				Code:   http.StatusInternalServerError,
+				Status: "error",
+				Data:   nil,
+				Error:  &msg,
+			}
+			c.JSON(http.StatusInternalServerError, res)
+			return
+		}
+
+		if *exist {
+			msg := "Error: Salah satu produk yang dipilih sudah berlangganan"
+			res := entity.Response[error]{
+				Code:   http.StatusInternalServerError,
+				Status: "error",
+				Data:   nil,
+				Error:  &msg,
+			}
+			c.JSON(http.StatusInternalServerError, res)
+			return
+		}
+	}
+
 	orderID = uuid.New().String()
 	newTotalPrice := int64(req[0].TotalPrice)
 
@@ -412,6 +439,33 @@ func CreateCheckoutOrderHandler(c *gin.Context) {
 		}
 		c.JSON(http.StatusUnauthorized, res)
 		return
+	}
+
+	for _, v := range req {
+		exist, err := model.GetExistingOrderSubscriptionByUserId(id, v.PId, v.PVId)
+		if err != nil {
+			msg := err.Error()
+			res := entity.Response[error]{
+				Code:   http.StatusInternalServerError,
+				Status: "error",
+				Data:   nil,
+				Error:  &msg,
+			}
+			c.JSON(http.StatusInternalServerError, res)
+			return
+		}
+
+		if *exist {
+			msg := "Error: Salah satu produk yang dipilih sudah berlangganan"
+			res := entity.Response[error]{
+				Code:   http.StatusInternalServerError,
+				Status: "error",
+				Data:   nil,
+				Error:  &msg,
+			}
+			c.JSON(http.StatusInternalServerError, res)
+			return
+		}
 	}
 
 	cart, err := model.CreateCheckoutOrder(id, req, stateAction)

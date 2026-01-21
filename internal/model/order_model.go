@@ -394,6 +394,24 @@ func GetAllOrderPayment() ([]entity.GetOrderPaymentResponse, error) {
 	return payments, nil
 }
 
+func GetExistingOrderSubscriptionByUserId(userId interface{}, productId, productVariantId int) (*bool, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var result bool
+	err := db.DB.GetContext(ctx, &result, `SELECT EXISTS (
+    SELECT 1
+    FROM orders
+    WHERE (order_status_id = 13 OR order_status_id = 10) AND user_id = $1 AND product_id = $2 AND product_variant_id = $3
+	LIMIT 1
+	)`, userId, productId, productVariantId)
+	if err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
 func GetExistingOrderSubscription(orderId interface{}) (*bool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -406,13 +424,12 @@ func GetExistingOrderSubscription(orderId interface{}) (*bool, error) {
 	}
 
 	var result bool
-	err = db.DB.GetContext(ctx, &result, `SELECT COUNT(*) > 1
-	FROM (
+	err = db.DB.GetContext(ctx, &result, `SELECT EXISTS (
     SELECT 1
     FROM orders
-    WHERE user_id = $1 AND product_id = $2 AND product_variant_id = $3
-	LIMIT 2
-	) t`, res.UserId, res.ProductId, res.ProductVariantId)
+    WHERE (order_status_id = 13 OR order_status_id = 10) AND user_id = $1 AND product_id = $2 AND product_variant_id = $3
+	LIMIT 1
+	)`, res.UserId, res.ProductId, res.ProductVariantId)
 	if err != nil {
 		return nil, err
 	}
@@ -434,7 +451,7 @@ func UpdateReminderScheduleId(orderId interface{}) (*string, error) {
 
 	// get the latest order_uq_id before recent order
 	var result []string
-	err = db.DB.GetContext(ctx, &result, `SELECT order_uq_id
+	err = db.DB.SelectContext(ctx, &result, `SELECT order_uq_id
 	FROM orders
 	WHERE user_id = $1 AND product_id = $2 AND product_variant_id = $3
 	ORDER BY created_at DESC
@@ -455,3 +472,16 @@ func UpdateReminderScheduleId(orderId interface{}) (*string, error) {
 
 	return &newOrderId, nil
 }
+
+// func UpdateReminderScheduleSendEmail(orderId interface{}) (*string, error) {
+// 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+// 	defer cancel()
+
+// 	// get user_id, product_id, product_variant_id from recent order
+// 	var res entity.GetUserProductProductVariant
+// 	err := db.DB.GetContext(ctx, &res, `SELECT user_id, product_id, product_variant_id
+// 	FROM orders WHERE order_uq_id = $1`, orderId)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// }

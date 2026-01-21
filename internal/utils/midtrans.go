@@ -17,13 +17,15 @@ import (
 func CreateQrisPaymentLink(orderID string, amount int64, userId interface{}, state string, orderProductData *entity.GetCheckoutOrderPaymentResponse) (string, string, error) {
 	userInfo, _ := model.GetUserPaymentById(userId)
 	data, _ := model.GetAllCheckoutOrderPayment(userId)
+	log.Println("finish get data")
 
 	reqBody := entity.MidtransChargeRequest{}
-	reqBody.EnablePayments = append(reqBody.EnablePayments, "qris")
+	reqBody.EnablePayments = append(reqBody.EnablePayments, "other_qris")
 	reqBody.TransactionDetails.OrderID = orderID
 	reqBody.TransactionDetails.GrossAmt = amount
 	reqBody.Expiry.Unit = "minutes"
 	reqBody.Expiry.Duration = 30
+	reqBody.CustomerRequired = true
 	reqBody.CustomerDetails.FirstName = userInfo.Name
 	reqBody.CustomerDetails.Email = userInfo.Email
 	reqBody.ItemDetails = make([]struct {
@@ -58,10 +60,13 @@ func CreateQrisPaymentLink(orderID string, amount int64, userId interface{}, sta
 		Price:    3000,
 	})
 	reqBody.QrisDetail.Acquirer = "gopay"
-	reqBody.Callbacks.Finish = os.Getenv("WEBSITE_URL")
+	reqBody.Callbacks.Finish = os.Getenv("WEBSITE_URL") + "/order-list"
+
+	log.Println("finish fill req")
 
 	body, _ := json.Marshal(reqBody)
 
+	log.Println("start request to midtrans")
 	req, err := http.NewRequest(
 		"POST",
 		os.Getenv("MIDTRANS_URL"),

@@ -15,7 +15,8 @@ type MidtransChargeRequest struct {
 		Unit     string `json:"unit"`
 		Duration int    `json:"duration"`
 	} `json:"expiry"`
-	CustomerDetails struct {
+	CustomerRequired bool `json:"customer_required"`
+	CustomerDetails  struct {
 		FirstName string `json:"first_name"`
 		Email     string `json:"email"`
 	} `json:"customer_details"`

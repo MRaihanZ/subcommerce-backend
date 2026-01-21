@@ -3,12 +3,14 @@ package main
 import (
 	"log"
 	"os"
+	"time"
 
 	"github.com/MRaihanZ/subcommerce-backend/internal/entity"
 	"github.com/MRaihanZ/subcommerce-backend/internal/service"
+	"github.com/MRaihanZ/subcommerce-backend/internal/utils"
 )
 
-func main() {
+func SendMail() {
 	// Status Subscription
 	// 1. ✅ Aktif
 	// 2. ⚠️ Akan Berakhir
@@ -38,4 +40,25 @@ func main() {
 		"Pengingat Langganan Product Subcommerce",
 		htmlBody,
 	)
+}
+
+func IntervalSet() {
+	start := time.Now()
+
+	next, warning, remove := utils.CalculateReminderDates(
+		start,
+		1,
+		8,
+	)
+
+	log.Println("Next: ", next)
+	log.Println("Warning: ", warning)
+	log.Println("Remove: ", remove)
+
+	// store next, warning, remove to DB
+
+}
+
+func main() {
+	IntervalSet()
 }

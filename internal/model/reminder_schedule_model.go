@@ -1,7 +1,6 @@
 package model
 
 import (
-	"log"
 	"time"
 
 	"github.com/MRaihanZ/subcommerce-backend/internal/db"
@@ -38,7 +37,6 @@ func FetchReminderBatch(
 
 	var rows []entity.ReminderSchedule
 	err := db.DB.Select(&rows, query, args...)
-	log.Println(len(rows))
 	return rows, err
 }
 
@@ -54,6 +52,14 @@ func UpdateLastSentAt(id string, t time.Time) error {
 	_, err := db.DB.Exec(
 		`UPDATE reminder_schedules SET last_sent_at = $1 WHERE id = $2`,
 		t,
+		id,
+	)
+	return err
+}
+
+func UpdateIsOver(id string) error {
+	_, err := db.DB.Exec(
+		`UPDATE reminder_schedules SET is_over = true WHERE id = $1`,
 		id,
 	)
 	return err
