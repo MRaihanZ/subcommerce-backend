@@ -90,9 +90,20 @@ type GetCheckoutOrderPaymentResponse struct {
 	TotalPrice int    `db:"total_price" json:"total_price"`
 }
 
+type OrderSubscriptionResponse struct {
+	OrderRequest        OrderRequest                    `json:"order_request"`
+	OrderPaymentRequest GetCheckoutOrderPaymentResponse `json:"order_payment_request"`
+}
+
 type GetOrderPaymentResponse struct {
 	PId                int    `db:"p_id" json:"p_id"`
 	PName              string `db:"p_name" json:"p_name"`
 	PCategoryPaymentId int    `db:"category_payment_id" json:"category_payment_id"`
 	CPName             string `db:"cp_name" json:"cp_name"`
+}
+
+type GetUserProductProductVariant struct {
+	UserId           string `db:"user_id"`
+	ProductId        int    `db:"product_id"`
+	ProductVariantId int    `db:"product_variant_id"`
 }

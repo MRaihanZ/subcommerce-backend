@@ -398,6 +398,39 @@ func fixingUniqueFkOrRsColumn() {
 	log.Println("=== Complete ===")
 }
 
+func fixingEmailUser() {
+	fmt.Println("")
+	log.Println("+++ Fixing and seeding user table +++")
+	gofakeit.Seed(0)
+
+	var err error
+
+	var selectId []uuid.UUID
+	err = DB.Select(&selectId, `SELECT id FROM users`)
+	if err != nil {
+		log.Println("select error: ", err)
+	}
+
+	if len(selectId) == 0 {
+		log.Println("no data found in select: ", err)
+	}
+	log.Println("ID LIST: ", selectId)
+
+	var email string
+	for _, v := range selectId {
+		email = gofakeit.Email()
+		_, err = DB.Exec(`
+		UPDATE users
+		SET email = $1 
+		WHERE id = $2`, email, v)
+		if err != nil {
+			log.Println("insert error: ", err)
+			break
+		}
+	}
+	log.Println("=== Complete ===")
+}
+
 func main() {
 	// restartSequence()
 	// users()
@@ -412,4 +445,5 @@ func main() {
 	// category_payments()
 	// payments()
 	// fixingUniqueFkOrRsColumn()
+	fixingEmailUser()
 }

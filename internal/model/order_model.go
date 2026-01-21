@@ -393,3 +393,65 @@ func GetAllOrderPayment() ([]entity.GetOrderPaymentResponse, error) {
 
 	return payments, nil
 }
+
+func GetExistingOrderSubscription(orderId interface{}) (*bool, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var res entity.GetUserProductProductVariant
+	err := db.DB.GetContext(ctx, &res, `SELECT user_id, product_id, product_variant_id
+	FROM orders WHERE order_uq_id = $1`, orderId)
+	if err != nil {
+		return nil, err
+	}
+
+	var result bool
+	err = db.DB.GetContext(ctx, &result, `SELECT COUNT(*) > 1
+	FROM (
+    SELECT 1
+    FROM orders
+    WHERE user_id = $1 AND product_id = $2 AND product_variant_id = $3
+	LIMIT 2
+	) t`, res.UserId, res.ProductId, res.ProductVariantId)
+	if err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
+func UpdateReminderScheduleId(orderId interface{}) (*string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// get user_id, product_id, product_variant_id from recent order
+	var res entity.GetUserProductProductVariant
+	err := db.DB.GetContext(ctx, &res, `SELECT user_id, product_id, product_variant_id
+	FROM orders WHERE order_uq_id = $1`, orderId)
+	if err != nil {
+		return nil, err
+	}
+
+	// get the latest order_uq_id before recent order
+	var result []string
+	err = db.DB.GetContext(ctx, &result, `SELECT order_uq_id
+	FROM orders
+	WHERE user_id = $1 AND product_id = $2 AND product_variant_id = $3
+	ORDER BY created_at DESC
+	LIMIT 2`, res.UserId, res.ProductId, res.ProductVariantId)
+	if err != nil {
+		return nil, err
+	}
+
+	var newOrderId string
+	err = db.DB.QueryRowContext(ctx, `UPDATE reminder_schedules SET id = $1
+	WHERE id = $2 RETURNING id;`, orderId, result[1]).Scan(&newOrderId)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errs.ErrNoOrderFound
+		}
+		return nil, err
+	}
+
+	return &newOrderId, nil
+}

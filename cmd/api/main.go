@@ -144,6 +144,7 @@ func main() {
 	// subscription
 	subscriptions := v1.Group("/subscriptions")
 	subscriptions.GET("/", controller.GetAllSubscriptionsByUserHandler)
+	subscriptions.POST("/", controller.CreateOrderSubscriptionHandler)
 	subscriptions.DELETE("/:order_id", controller.DeleteSubscription)
 
 	// users

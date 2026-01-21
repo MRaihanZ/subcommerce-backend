@@ -14,13 +14,12 @@ import (
 	"github.com/MRaihanZ/subcommerce-backend/internal/model"
 )
 
-func CreateQrisPaymentLink(orderID string, amount int64, userId interface{}) (string, string, error) {
+func CreateQrisPaymentLink(orderID string, amount int64, userId interface{}, state string, orderProductData *entity.GetCheckoutOrderPaymentResponse) (string, string, error) {
 	userInfo, _ := model.GetUserPaymentById(userId)
 	data, _ := model.GetAllCheckoutOrderPayment(userId)
 
-	reqBody := entity.MidtransChargeRequest{
-		PaymentType: "qris",
-	}
+	reqBody := entity.MidtransChargeRequest{}
+	reqBody.EnablePayments = append(reqBody.EnablePayments, "qris")
 	reqBody.TransactionDetails.OrderID = orderID
 	reqBody.TransactionDetails.GrossAmt = amount
 	reqBody.Expiry.Unit = "minutes"
@@ -59,6 +58,7 @@ func CreateQrisPaymentLink(orderID string, amount int64, userId interface{}) (st
 		Price:    3000,
 	})
 	reqBody.QrisDetail.Acquirer = "gopay"
+	reqBody.Callbacks.Finish = os.Getenv("WEBSITE_URL")
 
 	body, _ := json.Marshal(reqBody)
 

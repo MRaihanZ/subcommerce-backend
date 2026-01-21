@@ -26,13 +26,12 @@ func GetAllSubscriptionsByUser(userId interface{}) ([]entity.UserSubscription, e
 		JOIN orders o ON rs.id = o.order_uq_id
 		JOIN order_statuses os ON o.order_status_id = os.id
 		JOIN payments pay ON o.payment_id = pay.id
-		JOIN products p ON o.product_id = p.id
-		JOIN product_variants pv ON o.product_variant_id = pv.id
+		JOIN products p ON rs.product_id = p.id
+		JOIN product_variants pv ON rs.product_variant_id = pv.id
 		JOIN LATERAL (SELECT pi.img FROM product_images pi WHERE p.id = pi.product_id LIMIT 1) pi ON true
 		JOIN sellers s ON p.seller_id = s.id
 		JOIN intervals i ON pv.interval_id = i.id
-		WHERE rs.user_id = $1
-		ORDER BY rs.created_at DESC, o.order_pretty_id DESC;`, userId)
+		WHERE rs.user_id = $1;`, userId)
 	if err != nil {
 		return nil, err
 	}
@@ -48,15 +47,36 @@ func DeleteReminderSchedule(orderId string) (*string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
+	var returnId string
 	err := db.DB.QueryRowContext(ctx, `DELETE FROM reminder_schedules
 	WHERE order_uq_id = $2
-	RETURNING order_uq_id`, orderId).Scan(&orderId)
+	RETURNING order_uq_id`, orderId).Scan(&returnId)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errs.ErrNoOrderFound
+			return nil, errs.ErrNoSubscriptionFound
 		}
 		return nil, err
 	}
 
-	return &orderId, nil
+	return &returnId, nil
+}
+
+func GetEmailSellerByOrderId(orderId string) (*string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var email string
+	err := db.DB.SelectContext(ctx, &email, `SELECT u.email FROM orders o
+	JOIN products p ON o.product_id = p.id
+	JOIN sellers s ON p.seller_id = s.id
+	JOIN users u ON s.user_id = u.id
+	WHERE o.order_uq_id = $1;`, orderId)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errs.ErrNoSubscriptionFound
+		}
+		return nil, err
+	}
+
+	return &email, nil
 }

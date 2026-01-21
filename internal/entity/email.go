@@ -17,3 +17,12 @@ type SubscriptionEmailData struct {
 	TargetEmail     string
 	Domain          string
 }
+
+type CancelationSubscriptionByUserEmailData struct {
+	SellerName         string `json:"seller_name"`
+	UserName           string `json:"user_name"`
+	ProductName        string `json:"product_name"`
+	ProductVariantName string `json:"product_variant_name"`
+	Timestamp          string `json:"timestamp"`
+	Domain             string
+}

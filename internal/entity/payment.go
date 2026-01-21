@@ -6,7 +6,7 @@ type CreatePaymentRequest struct {
 }
 
 type MidtransChargeRequest struct {
-	PaymentType        string `json:"payment_type"`
+	EnablePayments     []string `json:"enabled_payments"`
 	TransactionDetails struct {
 		OrderID  string `json:"order_id"`
 		GrossAmt int64  `json:"gross_amount"`
@@ -28,4 +28,7 @@ type MidtransChargeRequest struct {
 	QrisDetail struct {
 		Acquirer string `json:"acquirer"`
 	} `json:"qris"`
+	Callbacks struct {
+		Finish string `json:"finish"`
+	} `json:"callbacks"`
 }

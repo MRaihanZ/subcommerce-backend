@@ -37,7 +37,7 @@ func CreatePaymentHandler(c *gin.Context) {
 		return
 	}
 
-	paymentURL, orderId, err := service.CreatePayment(req.OrderID, req.Amount, userId)
+	paymentURL, orderId, err := service.CreatePayment(req.OrderID, req.Amount, userId, "order", nil)
 	if err != nil {
 		msg := err.Error()
 		res := entity.Response[error]{

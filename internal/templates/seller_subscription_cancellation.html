@@ -107,18 +107,18 @@
 				<div class="email-body">
 					<div class="email-title">Notifikasi Pembatalan Langganan</div>
 
-					<p class="email-text">Halo <strong>&lt;seller name&gt;</strong>,</p>
+					<p class="email-text">Halo <strong>{{ .SellerName }}</strong>,</p>
 
 					<p class="email-text">
 						Kami ingin memberitahukan bahwa salah satu pelanggan Anda telah
-						berhasil melakukan pembatalan langganan.
+						membatalan langganan.
 					</p>
 
 					<div class="info-box">
-						<p><strong>Pelanggan:</strong> &lt;username&gt;</p>
-						<p><strong>Produk:</strong> &lt;product name&gt;</p>
-						<p><strong>Varian:</strong> &lt;product varian name&gt;</p>
-						<p><strong>Waktu Pembatalan:</strong> &lt;timestamp&gt;</p>
+						<p><strong>Pelanggan:</strong> {{ .UserName }}</p>
+						<p><strong>Produk:</strong> {{ .ProductName }}</p>
+						<p><strong>Varian:</strong> {{ .ProductVarianName }}</p>
+						<p><strong>Waktu Pembatalan:</strong> {{ .Timestamp }}</p>
 					</div>
 
 					<p class="email-text">
@@ -130,8 +130,26 @@
 
 					<p class="email-text">
 						Silakan masuk ke dashboard penjual Anda untuk melihat detail
-						langganan dan riwayat transaksi terkait.
+						langganan dan riwayat transaksi terkait atau klik tombol dibawah
+						ini.
 					</p>
+					<section style="text-align: center">
+						<a
+							href="{{ .Domain }}/"
+							style="
+								display: inline-block;
+								padding: 14px 28px;
+								background-color: #2563eb;
+								color: #ffffff;
+								text-decoration: none;
+								font-size: 14px;
+								font-weight: bold;
+								border-radius: 6px;
+							"
+						>
+							Kelola Langganan
+						</a>
+					</section>
 				</div>
 
 				<!-- Footer -->

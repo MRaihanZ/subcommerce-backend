@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"os"
 
 	"github.com/MRaihanZ/subcommerce-backend/internal/entity"
 	"github.com/MRaihanZ/subcommerce-backend/internal/service"
@@ -23,7 +24,7 @@ func main() {
 		OrderDate:       "2026-01-15 09:18:42",
 		PaymentDeadline: "2026-01-19",
 		TargetEmail:     "mraihanzhafran.14@gmail.com",
-		Domain:          "subcommerce.mraihanz.my.id",
+		Domain:          os.Getenv("WEBSITE_URL"),
 	}
 
 	htmlBody, err := service.RenderSubscriptionEmail(emailData, "E:/GIU/Devel/go_app/subcommerce-backend/internal/templates/email_schedule_reminder.html")
