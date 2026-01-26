@@ -91,8 +91,12 @@ type GetCheckoutOrderPaymentResponse struct {
 }
 
 type OrderSubscriptionResponse struct {
-	OrderRequest        OrderRequest                    `json:"order_request"`
-	OrderPaymentRequest GetCheckoutOrderPaymentResponse `json:"order_payment_request"`
+	PId          int          `db:"product_id" json:"p_id"`
+	PName        string       `db:"product_name" json:"p_name"`
+	Quantity     int          `db:"quantity" json:"quantity"`
+	UnitPrice    int          `db:"unit_price" json:"unit_price"`
+	TotalPrice   int          `db:"total_price" json:"total_price"`
+	OrderRequest OrderRequest `json:"order_request"`
 }
 
 type GetOrderPaymentResponse struct {

@@ -14,50 +14,87 @@ import (
 	"github.com/MRaihanZ/subcommerce-backend/internal/model"
 )
 
-func CreateQrisPaymentLink(orderID string, amount int64, userId interface{}, state string, orderProductData *entity.GetCheckoutOrderPaymentResponse) (string, string, error) {
-	userInfo, _ := model.GetUserPaymentById(userId)
-	data, _ := model.GetAllCheckoutOrderPayment(userId)
-
+func CreateQrisPaymentLink(orderID string, amount int64, userId interface{}, state string, orderProductData *entity.OrderSubscriptionResponse) (string, string, error) {
 	reqBody := entity.MidtransChargeRequest{}
-	reqBody.EnablePayments = append(reqBody.EnablePayments, "other_qris")
-	reqBody.TransactionDetails.OrderID = orderID
-	reqBody.TransactionDetails.GrossAmt = amount
-	reqBody.Expiry.Unit = "minutes"
-	reqBody.Expiry.Duration = 30
-	reqBody.CustomerRequired = true
-	reqBody.CustomerDetails.FirstName = userInfo.Name
-	reqBody.CustomerDetails.Email = userInfo.Email
-	reqBody.ItemDetails = make([]struct {
-		Id       string `json:"id"`
-		Name     string `json:"name"`
-		Quantity int    `json:"quantity"`
-		Price    int    `json:"price"`
-	}, 0, (len(data) + 1))
-	for _, info := range data {
 
+	if state == "order" {
+		userInfo, _ := model.GetUserPaymentById(userId)
+		data, _ := model.GetAllCheckoutOrderPayment(userId)
+		reqBody.CustomerDetails.FirstName = userInfo.Name
+		reqBody.CustomerDetails.Email = userInfo.Email
+		reqBody.ItemDetails = make([]struct {
+			Id       string `json:"id"`
+			Name     string `json:"name"`
+			Quantity int    `json:"quantity"`
+			Price    int    `json:"price"`
+		}, 0, (len(data) + 1))
+		for _, info := range data {
+			reqBody.ItemDetails = append(reqBody.ItemDetails, struct {
+				Id       string `json:"id"`
+				Name     string `json:"name"`
+				Quantity int    `json:"quantity"`
+				Price    int    `json:"price"`
+			}{
+				Id:       strconv.Itoa(info.PId),
+				Name:     info.PName,
+				Quantity: info.Quantity,
+				Price:    info.UnitPrice,
+			})
+		}
 		reqBody.ItemDetails = append(reqBody.ItemDetails, struct {
 			Id       string `json:"id"`
 			Name     string `json:"name"`
 			Quantity int    `json:"quantity"`
 			Price    int    `json:"price"`
 		}{
-			Id:       strconv.Itoa(info.PId),
-			Name:     info.PName,
-			Quantity: info.Quantity,
-			Price:    info.UnitPrice,
+			Id:       "1",
+			Name:     "Fee Aplication",
+			Quantity: 1,
+			Price:    3000,
+		})
+	} else if state == "subscription" {
+		userInfo, _ := model.GetUserPaymentById(userId)
+		reqBody.CustomerDetails.FirstName = userInfo.Name
+		reqBody.CustomerDetails.Email = userInfo.Email
+		reqBody.ItemDetails = make([]struct {
+			Id       string `json:"id"`
+			Name     string `json:"name"`
+			Quantity int    `json:"quantity"`
+			Price    int    `json:"price"`
+		}, 0, (2))
+		// product
+		reqBody.ItemDetails = append(reqBody.ItemDetails, struct {
+			Id       string `json:"id"`
+			Name     string `json:"name"`
+			Quantity int    `json:"quantity"`
+			Price    int    `json:"price"`
+		}{
+			Id:       strconv.Itoa(orderProductData.PId),
+			Name:     orderProductData.PName,
+			Quantity: orderProductData.Quantity,
+			Price:    orderProductData.UnitPrice,
+		})
+		// fee
+		reqBody.ItemDetails = append(reqBody.ItemDetails, struct {
+			Id       string `json:"id"`
+			Name     string `json:"name"`
+			Quantity int    `json:"quantity"`
+			Price    int    `json:"price"`
+		}{
+			Id:       "1",
+			Name:     "Fee Aplication",
+			Quantity: 1,
+			Price:    3000,
 		})
 	}
-	reqBody.ItemDetails = append(reqBody.ItemDetails, struct {
-		Id       string `json:"id"`
-		Name     string `json:"name"`
-		Quantity int    `json:"quantity"`
-		Price    int    `json:"price"`
-	}{
-		Id:       "1",
-		Name:     "Fee Aplication",
-		Quantity: 1,
-		Price:    3000,
-	})
+
+	reqBody.EnablePayments = append(reqBody.EnablePayments, "other_qris")
+	reqBody.TransactionDetails.OrderID = orderID
+	reqBody.TransactionDetails.GrossAmt = amount
+	reqBody.Expiry.Unit = "minutes"
+	reqBody.Expiry.Duration = 30
+	reqBody.CustomerRequired = true
+
 	reqBody.QrisDetail.Acquirer = "gopay"
 	reqBody.Callbacks.Finish = os.Getenv("WEBSITE_URL") + "/order-list"
 

@@ -122,7 +122,7 @@ func GetOrderBySellerID(sellerId interface{}, stateAction, orderCreated, orderId
 	return orders, nil
 }
 
-func CreateOrder(id interface{}, order []entity.OrderRequest, paymentUrl string, orderId interface{}) (*string, error) {
+func CreateOrder(id interface{}, order []entity.OrderRequest, paymentUrl string, orderId interface{}, state string) (*string, error) {
 	query := "INSERT INTO orders (user_id, payment_id, order_status_id, product_id, product_variant_id, payment_link, note, quantity, unit_price, total_price, order_uq_id, order_pretty_id) VALUES "
 	args := []interface{}{}
 	reqData := []string{}
@@ -149,12 +149,14 @@ func CreateOrder(id interface{}, order []entity.OrderRequest, paymentUrl string,
 		return nil, err
 	}
 
-	_, err = DeleteCheckoutOrder(id)
-	if err != nil {
-		if errors.Is(err, errs.ErrNoCheckoutFound) {
-			return nil, errs.ErrNoCheckoutFound
+	if state == "order" {
+		_, err = DeleteCheckoutOrder(id)
+		if err != nil {
+			if errors.Is(err, errs.ErrNoCheckoutFound) {
+				return nil, errs.ErrNoCheckoutFound
+			}
+			return nil, err
 		}
-		return nil, err
 	}
 
 	return &userId, nil
@@ -537,6 +539,24 @@ func UpdateReminderScheduleId(orderId interface{}) (*string, error) {
 	}
 
 	return &newOrderId, nil
+}
+
+func GetNextRemoveReminderSchedule(orderUqId string) (*time.Time, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var nextRemove time.Time
+	err := db.DB.GetContext(ctx, &nextRemove, `SELECT next_remove
+	FROM reminder_schedules
+	WHERE id = $1;`, orderUqId)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errs.ErrNoSubscriptionFound
+		}
+		return nil, err
+	}
+
+	return &nextRemove, nil
 }
 
 // func UpdateReminderScheduleSendEmail(orderId interface{}) (*string, error) {

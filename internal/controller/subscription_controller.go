@@ -109,7 +109,7 @@ func GetAllSubscriptionsBySellerHandler(c *gin.Context) {
 }
 
 func CreateOrderSubscriptionHandler(c *gin.Context) {
-	var req entity.OrderSubscriptionResponse
+	var req []entity.OrderSubscriptionResponse
 	if err := c.BindJSON(&req); err != nil {
 		msg := err.Error()
 		res := entity.Response[error]{
@@ -121,6 +121,7 @@ func CreateOrderSubscriptionHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, res)
 		return
 	}
+	log.Println("req check success")
 
 	session := sessions.Default(c)
 	id := session.Get("user_id")
@@ -136,6 +137,7 @@ func CreateOrderSubscriptionHandler(c *gin.Context) {
 		return
 	}
 
+	log.Println("start get reminder schedule id")
 	subs, err := model.GetReminderScheduleId(id)
 	if err != nil {
 		msg := err.Error()
@@ -148,7 +150,9 @@ func CreateOrderSubscriptionHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, res)
 		return
 	}
+	log.Println("success")
 
+	log.Println("check payment link active")
 	active, err := service.IsPaymentLinkActive(subs.Id)
 	if err != nil {
 		msg := err.Error()
@@ -161,8 +165,10 @@ func CreateOrderSubscriptionHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, res)
 		return
 	}
+	log.Println("success")
 
 	if active {
+		log.Println("active triggered")
 		msg := subs.PayLInk
 		res := entity.Response[string]{
 			Code:   http.StatusOK,
@@ -173,11 +179,13 @@ func CreateOrderSubscriptionHandler(c *gin.Context) {
 		c.JSON(http.StatusOK, res)
 		return
 	}
+	log.Println("pass active")
 
 	orderID := uuid.New().String()
-	newTotalPrice := int64(req.OrderRequest.TotalPrice)
+	newTotalPrice := int64(req[0].TotalPrice)
 
-	paymentURL, newOrderID, err := service.CreatePayment(orderID, newTotalPrice, id, "subscription", &req.OrderPaymentRequest)
+	log.Println("start create payment")
+	paymentURL, newOrderID, err := service.CreatePayment(orderID, newTotalPrice, id, "subscription", &req[0])
 	if err != nil {
 		msg := err.Error()
 		res := entity.Response[error]{
@@ -189,13 +197,16 @@ func CreateOrderSubscriptionHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, res)
 		return
 	}
+	log.Println("success")
 
 	var reqAfter []entity.OrderRequest
 
-	reqAfter = append(reqAfter, req.OrderRequest)
+	reqAfter = append(reqAfter, req[0].OrderRequest)
 
-	_, err = model.CreateOrder(id, reqAfter, paymentURL, newOrderID)
+	log.Println("start create order")
+	_, err = model.CreateOrder(id, reqAfter, paymentURL, newOrderID, "subscription")
 	if err != nil {
+		log.Println("create order error")
 		var code int
 		var msg string
 		switch {
@@ -219,6 +230,7 @@ func CreateOrderSubscriptionHandler(c *gin.Context) {
 		c.JSON(code, res)
 		return
 	}
+	log.Println("success")
 
 	res := entity.Response[string]{
 		Code:   http.StatusOK,

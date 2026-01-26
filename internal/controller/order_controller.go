@@ -214,7 +214,7 @@ func CreateOrderHandler(c *gin.Context) {
 		return
 	}
 
-	_, err = model.CreateOrder(id, req, paymentURL, newOrderID)
+	_, err = model.CreateOrder(id, req, paymentURL, newOrderID, "order")
 	if err != nil {
 		var code int
 		var msg string

@@ -118,10 +118,10 @@ func GetReminderScheduleId(userId interface{}) (*entity.SubscriptionIdPaymentLin
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	var id entity.SubscriptionIdPaymentLink
-	err := db.DB.SelectContext(ctx, &id, `SELECT rs.id, o.payment_link FROM reminder_schedules rs
+	var data entity.SubscriptionIdPaymentLink
+	err := db.DB.GetContext(ctx, &data, `SELECT rs.id, o.payment_link FROM reminder_schedules rs
 	JOIN orders o ON o.order_uq_id = rs.id
-	WHERE rs.user_id = $1 ORDER BY rs.created_at DESC LIMIT 1;`, userId)
+	WHERE rs.user_id = $1 ORDER BY rs.created_at DESC;`, userId)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, errs.ErrNoSubscriptionFound
@@ -129,5 +129,22 @@ func GetReminderScheduleId(userId interface{}) (*entity.SubscriptionIdPaymentLin
 		return nil, err
 	}
 
-	return &id, nil
+	return &data, nil
+}
+
+func UpdateReminderScheduleInterval(id string, next, warning, remove time.Time) (*string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var returnId string
+	err := db.DB.QueryRowContext(ctx, `UPDATE reminder_schedules 
+	SET next_send = $1, next_warning_send = $2,
+	next_remove = $3
+	WHERE id = $4
+	RETURNING id`, id, next, warning, remove).Scan(&returnId)
+	if err != nil {
+		return nil, err
+	}
+
+	return &returnId, nil
 }

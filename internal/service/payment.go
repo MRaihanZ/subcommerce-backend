@@ -9,7 +9,7 @@ import (
 	"github.com/MRaihanZ/subcommerce-backend/internal/utils"
 )
 
-func CreatePayment(orderID string, amount int64, userId interface{}, state string, orderProductData *entity.GetCheckoutOrderPaymentResponse) (string, string, error) {
+func CreatePayment(orderID string, amount int64, userId interface{}, state string, orderProductData *entity.OrderSubscriptionResponse) (string, string, error) {
 	paymentURL, orderId, err := utils.CreateQrisPaymentLink(orderID, amount, userId, state, orderProductData)
 	if err != nil {
 		return "", "", err
@@ -99,69 +99,31 @@ func HandleWebhook(orderID string, transactionStatus string) error {
 			log.Println("ERROR IN PAYMENT WEBHOOK, WHEN UPDATE ID REMINDER SCHEDULE: ", id)
 		}
 
-		// dataOrderUser, err := model.GetUserIdFromOrders(newOrderID)
-		// if err != nil {
-		// 	var code int
-		// 	var msg string
-		// 	switch {
-		// 	case errors.Is(err, errs.ErrNoOrderFound):
-		// 		code = http.StatusNotFound
-		// 		msg = err.Error()
-		// 	default:
-		// 		code = http.StatusInternalServerError
-		// 		msg = "internal server error"
-		// 	}
-		// 	res := entity.Response[error]{
-		// 		Code:   code,
-		// 		Status: "error",
-		// 		Data:   nil,
-		// 		Error:  &msg,
-		// 	}
-		// 	c.JSON(code, res)
-		// 	return
-		// }
+		dataOrderUser, err := model.GetUserIdFromOrders(newOrderID)
+		if err != nil {
+			log.Println("ERROR IN PAYMENT WEBHOOK, WHEN GET USER, PRODUCT, AND PRODUCT VARIANT ID : ", err)
+		}
 
-		// dataIntervalProduct, err := model.GetIntervalProduct(dataOrderUser.ProductId, dataOrderUser.ProductVariantId)
-		// if err != nil {
-		// 	var code int
-		// 	var msg string
-		// 	switch {
-		// 	case errors.Is(err, errs.ErrNoProductFound):
-		// 		code = http.StatusNotFound
-		// 		msg = err.Error()
-		// 	default:
-		// 		code = http.StatusInternalServerError
-		// 		msg = "internal server error"
-		// 	}
-		// 	res := entity.Response[error]{
-		// 		Code:   code,
-		// 		Status: "error",
-		// 		Data:   nil,
-		// 		Error:  &msg,
-		// 	}
-		// 	c.JSON(code, res)
-		// 	return
-		// }
+		nextRemove, err := model.GetNextRemoveReminderSchedule(newOrderID)
+		if err != nil {
+			log.Println("ERROR IN PAYMENT WEBHOOK, WHEN UPDATE ID REMINDER SCHEDULE: ", err)
+		}
 
-		// start := time.Now()
-		// next, warning, remove := utils.CalculateReminderDates(
-		// 	start,
-		// 	dataIntervalProduct.Id,
-		// 	dataIntervalProduct.Interval,
-		// )
+		dataIntervalProduct, err := model.GetIntervalProduct(dataOrderUser.ProductId, dataOrderUser.ProductVariantId)
+		if err != nil {
+			log.Println("ERROR IN PAYMENT WEBHOOK, WHEN GET INTERVAL PRODUCT : ", err)
+		}
 
-		// _, err = model.CreateReminderSchedule(*status, *dataOrderUser, next, warning, remove)
-		// if err != nil {
-		// 	msg := err.Error()
-		// 	res := entity.Response[error]{
-		// 		Code:   http.StatusInternalServerError,
-		// 		Status: "error",
-		// 		Data:   nil,
-		// 		Error:  &msg,
-		// 	}
-		// 	c.JSON(http.StatusInternalServerError, res)
-		// 	return
-		// }
+		next, warning, remove := utils.CalculateReminderDates(
+			*nextRemove,
+			dataIntervalProduct.Id,
+			dataIntervalProduct.Interval,
+		)
+
+		_, err = model.UpdateReminderScheduleInterval(newOrderID, next, warning, remove)
+		if err != nil {
+			log.Println("ERROR IN PAYMENT WEBHOOK, WHEN UPDATE ID REMINDER SCHEDULE: ", err)
+		}
 	}
 
 	_, err = model.UpdateStatusOrder(newOrderID, status)
