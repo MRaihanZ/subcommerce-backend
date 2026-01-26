@@ -106,7 +106,7 @@ func HandleWebhook(orderID string, transactionStatus string) error {
 
 		nextRemove, err := model.GetNextRemoveReminderSchedule(newOrderID)
 		if err != nil {
-			log.Println("ERROR IN PAYMENT WEBHOOK, WHEN UPDATE ID REMINDER SCHEDULE: ", err)
+			log.Println("ERROR IN PAYMENT WEBHOOK, WHEN GET NEXT REMOVE REMINDER SCHEDULES: ", err)
 		}
 
 		dataIntervalProduct, err := model.GetIntervalProduct(dataOrderUser.ProductId, dataOrderUser.ProductVariantId)
