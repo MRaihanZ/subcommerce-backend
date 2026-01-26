@@ -82,8 +82,8 @@ func DeleteReminderSchedule(orderId string) (*string, error) {
 
 	var returnId string
 	err := db.DB.QueryRowContext(ctx, `DELETE FROM reminder_schedules
-	WHERE order_uq_id = $2
-	RETURNING order_uq_id`, orderId).Scan(&returnId)
+	WHERE id = $1
+	RETURNING id`, orderId).Scan(&returnId)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, errs.ErrNoSubscriptionFound
@@ -99,7 +99,7 @@ func GetEmailSellerByOrderId(orderId string) (*string, error) {
 	defer cancel()
 
 	var email string
-	err := db.DB.SelectContext(ctx, &email, `SELECT u.email FROM orders o
+	err := db.DB.GetContext(ctx, &email, `SELECT u.email FROM orders o
 	JOIN products p ON o.product_id = p.id
 	JOIN sellers s ON p.seller_id = s.id
 	JOIN users u ON s.user_id = u.id

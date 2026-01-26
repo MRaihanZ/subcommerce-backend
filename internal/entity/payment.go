@@ -36,7 +36,7 @@ type MidtransChargeRequest struct {
 
 type CreatePayoutRequest struct {
 	Name        string `json:"name"`
-	PayId       string `json:"Payid"`
+	PayId       string `json:"pay_id"`
 	Amount      int64  `json:"amount"`
 	Description string `json:"description"`
 }

@@ -121,7 +121,6 @@ func CreateOrderSubscriptionHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, res)
 		return
 	}
-	log.Println("req check success")
 
 	session := sessions.Default(c)
 	id := session.Get("user_id")
@@ -137,7 +136,6 @@ func CreateOrderSubscriptionHandler(c *gin.Context) {
 		return
 	}
 
-	log.Println("start get reminder schedule id")
 	subs, err := model.GetReminderScheduleId(id)
 	if err != nil {
 		msg := err.Error()
@@ -150,9 +148,7 @@ func CreateOrderSubscriptionHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, res)
 		return
 	}
-	log.Println("success")
 
-	log.Println("check payment link active")
 	active, err := service.IsPaymentLinkActive(subs.Id)
 	if err != nil {
 		msg := err.Error()
@@ -165,10 +161,8 @@ func CreateOrderSubscriptionHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, res)
 		return
 	}
-	log.Println("success")
 
 	if active {
-		log.Println("active triggered")
 		msg := subs.PayLInk
 		res := entity.Response[string]{
 			Code:   http.StatusOK,
@@ -179,12 +173,10 @@ func CreateOrderSubscriptionHandler(c *gin.Context) {
 		c.JSON(http.StatusOK, res)
 		return
 	}
-	log.Println("pass active")
 
 	orderID := uuid.New().String()
 	newTotalPrice := int64(req[0].TotalPrice)
 
-	log.Println("start create payment")
 	paymentURL, newOrderID, err := service.CreatePayment(orderID, newTotalPrice, id, "subscription", &req[0])
 	if err != nil {
 		msg := err.Error()
@@ -197,16 +189,13 @@ func CreateOrderSubscriptionHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, res)
 		return
 	}
-	log.Println("success")
 
 	var reqAfter []entity.OrderRequest
 
 	reqAfter = append(reqAfter, req[0].OrderRequest)
 
-	log.Println("start create order")
 	_, err = model.CreateOrder(id, reqAfter, paymentURL, newOrderID, "subscription")
 	if err != nil {
-		log.Println("create order error")
 		var code int
 		var msg string
 		switch {
@@ -230,7 +219,6 @@ func CreateOrderSubscriptionHandler(c *gin.Context) {
 		c.JSON(code, res)
 		return
 	}
-	log.Println("success")
 
 	res := entity.Response[string]{
 		Code:   http.StatusOK,
@@ -270,7 +258,7 @@ func DeleteSubscription(c *gin.Context) {
 		return
 	}
 
-	var req entity.CancelationSubscriptionByUserEmailData
+	var req entity.CancelSubsRequest
 	if err := c.BindJSON(&req); err != nil {
 		msg := err.Error()
 		res := entity.Response[error]{
@@ -384,7 +372,6 @@ func DeleteSubscription(c *gin.Context) {
 		Domain:             os.Getenv("WEBSITE_URL"),
 	}
 
-	req.Domain = os.Getenv("WEBSITE_URL")
 	htmlBody, err := service.RenderSubscriptionCancelationByUserEmail(emailData, "E:/GIU/Devel/go_app/subcommerce-backend/internal/templates/seller_subscription_cancellation.html")
 	if err != nil {
 		log.Fatal(err)

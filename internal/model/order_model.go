@@ -559,6 +559,38 @@ func GetNextRemoveReminderSchedule(orderUqId string) (*time.Time, error) {
 	return &nextRemove, nil
 }
 
+func UpdateWalletSeller(orderId string) (*string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var totalPrice int64
+	err := db.DB.GetContext(ctx, &totalPrice, `SELECT total_price
+	FROM orders WHERE id = $1`, orderId)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errs.ErrNoOrderFound
+		}
+		return nil, err
+	}
+
+	var sellerId string
+	err = db.DB.QueryRowContext(ctx, `UPDATE sellers s
+	SET wallet = $1
+	FROM orders o
+	JOIN products p ON p.id = o.product_id
+	WHERE s.id = p.seller_id
+	AND o.id = $2
+	RETURNING s.id;`, totalPrice, orderId).Scan(&sellerId)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errs.ErrNoOrderFound
+		}
+		return nil, err
+	}
+
+	return &sellerId, nil
+}
+
 // func UpdateReminderScheduleSendEmail(orderId interface{}) (*string, error) {
 // 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 // 	defer cancel()

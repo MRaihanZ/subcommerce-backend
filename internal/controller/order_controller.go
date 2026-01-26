@@ -470,6 +470,19 @@ func UpdateStatusOrderHandler(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, res)
 			return
 		}
+
+		_, err = model.UpdateWalletSeller(orderId)
+		if err != nil {
+			msg := err.Error()
+			res := entity.Response[error]{
+				Code:   http.StatusInternalServerError,
+				Status: "error",
+				Data:   nil,
+				Error:  &msg,
+			}
+			c.JSON(http.StatusInternalServerError, res)
+			return
+		}
 	}
 
 	res := entity.Response[*string]{

@@ -54,3 +54,9 @@ type SubscriptionIdPaymentLink struct {
 	Id      string `db:"id"`
 	PayLInk string `db:"payment_link"`
 }
+
+type CancelSubsRequest struct {
+	SellerName         string `json:"seller_name"`
+	ProductName        string `json:"product_name"`
+	ProductVariantName string `json:"product_variant_name"`
+}

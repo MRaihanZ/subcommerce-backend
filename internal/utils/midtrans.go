@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -172,8 +173,7 @@ func CreateMidtransDisbursement(
 	amount int64,
 	description string,
 ) error {
-
-	url := fmt.Sprintf("%s/v1/disbursements", os.Getenv("MIDTRANS_DISBURSEMENT_BASE"))
+	url := fmt.Sprintf("%s/v1/disbursements", os.Getenv("MIDTRANS_API_BASE"))
 
 	reqBody := map[string]interface{}{
 		"name":        name,
@@ -200,9 +200,10 @@ func CreateMidtransDisbursement(
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusCreated {
-		var res map[string]interface{}
-		json.NewDecoder(resp.Body).Decode(&res)
-		return fmt.Errorf("midtrans payout failed: %v", res)
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		log.Println("MIDTRANS PAYOUT STATUS:", resp.StatusCode)
+		log.Println("MIDTRANS PAYOUT BODY:", string(bodyBytes))
+		return fmt.Errorf("midtrans payout failed")
 	}
 
 	var res map[string]interface{}
