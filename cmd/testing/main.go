@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"time"
@@ -8,6 +9,8 @@ import (
 	"github.com/MRaihanZ/subcommerce-backend/internal/entity"
 	"github.com/MRaihanZ/subcommerce-backend/internal/service"
 	"github.com/MRaihanZ/subcommerce-backend/internal/utils"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 func SendMail() {
@@ -15,15 +18,16 @@ func SendMail() {
 	// 1. ✅ Aktif
 	// 2. ⚠️ Akan Berakhir
 	// 3. ❌ Tidak Aktif
+	today := time.Now()
 	emailData := entity.SubscriptionEmailData{
-		ID:              "3d08f42e-c76f-4d77-b096-31acbe7506c7",
-		OrderID:         1,
+		OrderID:         "INV-20260121-0049",
+		SubscriptionID:  "557ba9c5-c613-4131-aa69-140f72b03877",
 		UserName:        "Raihan",
 		ProductName1:    "Iron Nexus Plastic",
 		ProductName2:    "A",
 		Subscription:    "2 Bulan",
 		Status:          "✅ Aktif",
-		OrderDate:       "2026-01-15 09:18:42",
+		OrderDate:       today.Format("02-01-2006 15:04:05"),
 		PaymentDeadline: "2026-01-19",
 		TargetEmail:     "mraihanzhafran.14@gmail.com",
 		Domain:          os.Getenv("WEBSITE_URL"),
@@ -59,6 +63,14 @@ func IntervalSet() {
 
 }
 
+func CasesTester() {
+	caser := cases.Title(language.MustParse("id-ID"))
+	some := "Bulan"
+	fmt.Println(caser.String(some))
+}
+
 func main() {
-	IntervalSet()
+	// SendMail()
+	// IntervalSet()
+	CasesTester()
 }

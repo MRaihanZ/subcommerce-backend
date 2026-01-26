@@ -148,7 +148,7 @@ CREATE TABLE
 -- 1. menunggu pembayaran
 -- 2. pembayaran dibatalkan
 -- 3. batas waktu pembayaran habis
--- 4. menunggu konfirmasi seller
+-- 4. menunggu konfirmasi seller -> change to "produk sedang disiapkan"
 -- 5. dibatalkan seller
 -- 6. dibatalkan pengguna
 -- 7. produk sedang disiapkan

@@ -3,12 +3,15 @@ package controller
 import (
 	"errors"
 	"net/http"
+	"regexp"
 	"strconv"
+	"time"
 
 	"github.com/MRaihanZ/subcommerce-backend/internal/entity"
 	"github.com/MRaihanZ/subcommerce-backend/internal/errs"
 	"github.com/MRaihanZ/subcommerce-backend/internal/model"
 	"github.com/MRaihanZ/subcommerce-backend/internal/service"
+	"github.com/MRaihanZ/subcommerce-backend/internal/utils"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -35,7 +38,7 @@ func GetOrdersHandler(c *gin.Context) {
 		var msg string
 		switch {
 		case errors.Is(err, errs.ErrNoOrderFound):
-			code = http.StatusInternalServerError
+			code = http.StatusNotFound
 			msg = err.Error()
 		default:
 			code = http.StatusInternalServerError
@@ -198,7 +201,7 @@ func CreateOrderHandler(c *gin.Context) {
 	orderID = uuid.New().String()
 	newTotalPrice := int64(req[0].TotalPrice)
 
-	paymentURL, orderID, err = service.CreatePayment(orderID, newTotalPrice, id, "order", nil)
+	paymentURL, newOrderID, err := service.CreatePayment(orderID, newTotalPrice, id, "order", nil)
 	if err != nil {
 		msg := err.Error()
 		res := entity.Response[error]{
@@ -211,13 +214,13 @@ func CreateOrderHandler(c *gin.Context) {
 		return
 	}
 
-	_, err = model.CreateOrder(id, req, paymentURL, orderID)
+	_, err = model.CreateOrder(id, req, paymentURL, newOrderID)
 	if err != nil {
 		var code int
 		var msg string
 		switch {
 		case errors.Is(err, errs.ErrNoOrderFound):
-			code = http.StatusInternalServerError
+			code = http.StatusNotFound
 			msg = err.Error()
 		case errors.Is(err, errs.ErrNoCheckoutFound):
 			code = http.StatusBadRequest
@@ -226,7 +229,6 @@ func CreateOrderHandler(c *gin.Context) {
 			code = http.StatusInternalServerError
 			msg = "internal server error"
 		}
-
 		res := entity.Response[error]{
 			Code:   code,
 			Status: "error",
@@ -241,6 +243,65 @@ func CreateOrderHandler(c *gin.Context) {
 		Code:   http.StatusOK,
 		Status: "ok",
 		Data:   paymentURL,
+		Error:  nil,
+	}
+	c.JSON(http.StatusOK, res)
+}
+
+func CancelOrderHandler(c *gin.Context) {
+	orderId := c.Param("order_id")
+
+	// session check
+	session := sessions.Default(c)
+	id := session.Get("user_id")
+	if id == nil {
+		msg := "unauthorized"
+		res := entity.Response[any]{
+			Code:   http.StatusUnauthorized,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusUnauthorized, res)
+		return
+	}
+
+	// call service
+	err := service.CancelPayment(orderId)
+	if err != nil {
+		msg := err.Error()
+		res := entity.Response[any]{
+			Code:   http.StatusBadRequest,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusBadRequest, res)
+		return
+	}
+
+	// remove last "-<digits>"
+	re := regexp.MustCompile(`-\d+$`)
+	newOrderID := re.ReplaceAllString(orderId, "")
+
+	// update order status → pembayaran dibatalkan (2)
+	_, err = model.UpdateStatusOrder(newOrderID, 2)
+	if err != nil {
+		msg := err.Error()
+		res := entity.Response[any]{
+			Code:   http.StatusInternalServerError,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusInternalServerError, res)
+		return
+	}
+
+	res := entity.Response[string]{
+		Code:   http.StatusOK,
+		Status: "ok",
+		Data:   "payment cancelled",
 		Error:  nil,
 	}
 	c.JSON(http.StatusOK, res)
@@ -323,13 +384,13 @@ func UpdateStatusOrderHandler(c *gin.Context) {
 		return
 	}
 
-	status, err := model.UpdateStatusOrder(orderId, numStatusId)
+	status, err := model.UpdateStatusOrderBySeller(orderId, numStatusId)
 	if err != nil {
 		var code int
 		var msg string
 		switch {
 		case errors.Is(err, errs.ErrNoOrderFound):
-			code = http.StatusInternalServerError
+			code = http.StatusNotFound
 			msg = err.Error()
 		default:
 			code = http.StatusInternalServerError
@@ -343,6 +404,72 @@ func UpdateStatusOrderHandler(c *gin.Context) {
 		}
 		c.JSON(code, res)
 		return
+	}
+
+	if numStatusId == 10 {
+		dataOrderUser, err := model.GetUserIdFromOrders(*status)
+		if err != nil {
+			var code int
+			var msg string
+			switch {
+			case errors.Is(err, errs.ErrNoOrderFound):
+				code = http.StatusNotFound
+				msg = err.Error()
+			default:
+				code = http.StatusInternalServerError
+				msg = "internal server error"
+			}
+			res := entity.Response[error]{
+				Code:   code,
+				Status: "error",
+				Data:   nil,
+				Error:  &msg,
+			}
+			c.JSON(code, res)
+			return
+		}
+
+		dataIntervalProduct, err := model.GetIntervalProduct(dataOrderUser.ProductId, dataOrderUser.ProductVariantId)
+		if err != nil {
+			var code int
+			var msg string
+			switch {
+			case errors.Is(err, errs.ErrNoProductFound):
+				code = http.StatusNotFound
+				msg = err.Error()
+			default:
+				code = http.StatusInternalServerError
+				msg = "internal server error"
+			}
+			res := entity.Response[error]{
+				Code:   code,
+				Status: "error",
+				Data:   nil,
+				Error:  &msg,
+			}
+			c.JSON(code, res)
+			return
+		}
+
+		start := time.Now()
+		next, warning, remove := utils.CalculateReminderDates(
+			start,
+			dataIntervalProduct.Id,
+			dataIntervalProduct.Interval,
+		)
+
+		_, err = model.CreateReminderSchedule(*status, *dataOrderUser, next, warning, remove)
+		if err != nil {
+			msg := err.Error()
+			res := entity.Response[error]{
+				Code:   http.StatusInternalServerError,
+				Status: "error",
+				Data:   nil,
+				Error:  &msg,
+			}
+			c.JSON(http.StatusInternalServerError, res)
+			return
+		}
 	}
 
 	res := entity.Response[*string]{

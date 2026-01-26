@@ -5,8 +5,8 @@ type Sender interface {
 }
 
 type SubscriptionEmailData struct {
-	ID              string
-	OrderID         int
+	OrderID         string
+	SubscriptionID  string
 	UserName        string
 	ProductName1    string
 	ProductName2    string
@@ -20,9 +20,9 @@ type SubscriptionEmailData struct {
 
 type CancelationSubscriptionByUserEmailData struct {
 	SellerName         string `json:"seller_name"`
-	UserName           string `json:"user_name"`
+	UserName           string
 	ProductName        string `json:"product_name"`
 	ProductVariantName string `json:"product_variant_name"`
-	Timestamp          string `json:"timestamp"`
+	Timestamp          string
 	Domain             string
 }

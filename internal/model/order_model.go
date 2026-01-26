@@ -178,6 +178,72 @@ func DeleteOrder(id interface{}) (*string, error) {
 	return &returnId, nil
 }
 
+func UpdateStatusOrderBySeller(orderId string, statusId int) (*string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	err := db.DB.QueryRowContext(ctx, `UPDATE orders SET order_status_id = $1
+	WHERE id = $2
+	RETURNING order_uq_id`, statusId, orderId).Scan(&orderId)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errs.ErrNoOrderFound
+		}
+		return nil, err
+	}
+
+	return &orderId, nil
+}
+
+func GetUserIdFromOrders(orderUgId string) (*entity.GetUserProductProductVariant, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var res entity.GetUserProductProductVariant
+	err := db.DB.GetContext(ctx, &res, `SELECT user_id, product_id, product_variant_id
+	FROM orders WHERE order_uq_id = $1`, orderUgId)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errs.ErrNoOrderFound
+		}
+		return nil, err
+	}
+
+	return &res, nil
+}
+
+func GetIntervalProduct(productId, productVariantId int) (*entity.IntervalProduct, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var res entity.IntervalProduct
+	err := db.DB.GetContext(ctx, &res, `SELECT interval_id, interval
+	FROM product_variants WHERE product_id = $1 AND id = $2`, productId, productVariantId)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errs.ErrNoProductFound
+		}
+		return nil, err
+	}
+
+	return &res, nil
+}
+
+func CreateReminderSchedule(orderUqId string, data entity.GetUserProductProductVariant, next, warning, remove time.Time) (*string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var reminderSchedulesId string
+
+	err := db.DB.QueryRowxContext(ctx, "INSERT INTO reminder_schedules (id, user_id, product_id, product_variant_id, next_send, next_warning_send, next_remove) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id",
+		orderUqId, data.UserId, data.ProductId, data.ProductVariantId, next, warning, remove,
+	).Scan(&reminderSchedulesId)
+	if err != nil {
+		return nil, err
+	}
+	return &reminderSchedulesId, nil
+}
+
 func UpdateStatusOrder(orderId string, statusId int) (*string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

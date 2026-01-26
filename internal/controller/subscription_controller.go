@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/MRaihanZ/subcommerce-backend/internal/entity"
 	"github.com/MRaihanZ/subcommerce-backend/internal/errs"
@@ -61,6 +62,52 @@ func GetAllSubscriptionsByUserHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, res)
 }
 
+func GetAllSubscriptionsBySellerHandler(c *gin.Context) {
+	session := sessions.Default(c)
+	id := session.Get("seller_id")
+	if id == nil {
+		msg := "id null"
+		res := entity.Response[error]{
+			Code:   http.StatusUnauthorized,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusUnauthorized, res)
+		return
+	}
+
+	subs, err := model.GetAllSubscriptionsBySeller(id)
+	if err != nil {
+		var code int
+		var msg string
+		switch {
+		case errors.Is(err, errs.ErrNoSubscriptionFound):
+			code = http.StatusNotFound
+			msg = err.Error()
+		default:
+			code = http.StatusInternalServerError
+			msg = "internal server error"
+		}
+		res := entity.Response[error]{
+			Code:   code,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(code, res)
+		return
+	}
+
+	res := entity.Response[[]entity.UserSubscriptionBySeller]{
+		Code:   http.StatusOK,
+		Status: "ok",
+		Data:   subs,
+		Error:  nil,
+	}
+	c.JSON(http.StatusOK, res)
+}
+
 func CreateOrderSubscriptionHandler(c *gin.Context) {
 	var req entity.OrderSubscriptionResponse
 	if err := c.BindJSON(&req); err != nil {
@@ -89,10 +136,48 @@ func CreateOrderSubscriptionHandler(c *gin.Context) {
 		return
 	}
 
+	subs, err := model.GetReminderScheduleId(id)
+	if err != nil {
+		msg := err.Error()
+		res := entity.Response[error]{
+			Code:   http.StatusInternalServerError,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusInternalServerError, res)
+		return
+	}
+
+	active, err := service.IsPaymentLinkActive(subs.Id)
+	if err != nil {
+		msg := err.Error()
+		res := entity.Response[error]{
+			Code:   http.StatusInternalServerError,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusInternalServerError, res)
+		return
+	}
+
+	if active {
+		msg := subs.PayLInk
+		res := entity.Response[string]{
+			Code:   http.StatusOK,
+			Status: "ok",
+			Data:   msg,
+			Error:  nil,
+		}
+		c.JSON(http.StatusOK, res)
+		return
+	}
+
 	orderID := uuid.New().String()
 	newTotalPrice := int64(req.OrderRequest.TotalPrice)
 
-	paymentURL, orderID, err := service.CreatePayment(orderID, newTotalPrice, id, "subscription", &req.OrderPaymentRequest)
+	paymentURL, newOrderID, err := service.CreatePayment(orderID, newTotalPrice, id, "subscription", &req.OrderPaymentRequest)
 	if err != nil {
 		msg := err.Error()
 		res := entity.Response[error]{
@@ -109,7 +194,7 @@ func CreateOrderSubscriptionHandler(c *gin.Context) {
 
 	reqAfter = append(reqAfter, req.OrderRequest)
 
-	_, err = model.CreateOrder(id, reqAfter, paymentURL, orderID)
+	_, err = model.CreateOrder(id, reqAfter, paymentURL, newOrderID)
 	if err != nil {
 		var code int
 		var msg string
@@ -147,11 +232,8 @@ func CreateOrderSubscriptionHandler(c *gin.Context) {
 func DeleteSubscription(c *gin.Context) {
 	// get session
 	session := sessions.Default(c)
-	userId := session.Get("user_id")
-	sellerId := session.Get("seller_id")
-
-	// cek session if not login
-	if userId == nil || sellerId == nil {
+	id := session.Get("user_id")
+	if id == nil {
 		msg := "id null"
 		res := entity.Response[error]{
 			Code:   http.StatusUnauthorized,
@@ -160,44 +242,6 @@ func DeleteSubscription(c *gin.Context) {
 			Error:  &msg,
 		}
 		c.JSON(http.StatusUnauthorized, res)
-		return
-	}
-
-	stateQuery := c.Query("state")
-	switch stateQuery {
-	case "user":
-		if userId == "noId" {
-			msg := "id null"
-			res := entity.Response[error]{
-				Code:   http.StatusUnauthorized,
-				Status: "error",
-				Data:   nil,
-				Error:  &msg,
-			}
-			c.JSON(http.StatusUnauthorized, res)
-			return
-		}
-	case "seller":
-		if sellerId == "noId" {
-			msg := "id null"
-			res := entity.Response[error]{
-				Code:   http.StatusUnauthorized,
-				Status: "error",
-				Data:   nil,
-				Error:  &msg,
-			}
-			c.JSON(http.StatusUnauthorized, res)
-			return
-		}
-	default:
-		msg := "wrong query"
-		res := entity.Response[error]{
-			Code:   http.StatusBadRequest,
-			Status: "error",
-			Data:   nil,
-			Error:  &msg,
-		}
-		c.JSON(http.StatusBadRequest, res)
 		return
 	}
 
@@ -224,6 +268,28 @@ func DeleteSubscription(c *gin.Context) {
 			Error:  &msg,
 		}
 		c.JSON(http.StatusBadRequest, res)
+		return
+	}
+
+	dataUser, err := model.GetUserById(id)
+	if err != nil {
+		var code int
+		var msg string
+		switch {
+		case errors.Is(err, errs.ErrNoOrderFound):
+			code = http.StatusNotFound
+			msg = err.Error()
+		default:
+			code = http.StatusInternalServerError
+			msg = "internal server error"
+		}
+		res := entity.Response[error]{
+			Code:   code,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(code, res)
 		return
 	}
 
@@ -296,8 +362,18 @@ func DeleteSubscription(c *gin.Context) {
 		return
 	}
 
+	today := time.Now().Format("02-01-2006 15:04:05")
+	emailData := entity.CancelationSubscriptionByUserEmailData{
+		SellerName:         req.SellerName,
+		UserName:           dataUser.Name,
+		ProductName:        req.ProductName,
+		ProductVariantName: req.ProductVariantName,
+		Timestamp:          today,
+		Domain:             os.Getenv("WEBSITE_URL"),
+	}
+
 	req.Domain = os.Getenv("WEBSITE_URL")
-	htmlBody, err := service.RenderSubscriptionCancelationByUserEmail(req, "E:/GIU/Devel/go_app/subcommerce-backend/internal/templates/seller_subscription_cancellation.html")
+	htmlBody, err := service.RenderSubscriptionCancelationByUserEmail(emailData, "E:/GIU/Devel/go_app/subcommerce-backend/internal/templates/seller_subscription_cancellation.html")
 	if err != nil {
 		log.Fatal(err)
 	}

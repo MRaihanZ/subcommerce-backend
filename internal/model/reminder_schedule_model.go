@@ -10,20 +10,17 @@ import (
 func FetchReminderBatch(
 	today string,
 	limit int,
-) ([]entity.ReminderSchedule, error) {
+) ([]entity.SubscriptionData, error) {
 	var args []any
-	query := `
-		SELECT
-		id,
-		user_id,
-		product_id,
-		product_variant_id,
-		next_send,
-		next_warning_send,
-		next_remove,
-		last_sent_at,
-		is_over
-	FROM reminder_schedules
+	query := `SELECT
+		rs.id, rs.user_id, rs.product_id, rs.product_variant_id, rs.next_send, rs.next_warning_send, rs.next_remove, rs.last_sent_at, rs.is_over,
+		o.order_pretty_id, o.created_at, u.name AS user_name, u.email, p.name AS product_name, pv.name AS product_variant_name, pv.interval, i.name AS interval_name
+	FROM reminder_schedules rs
+	JOIN orders o ON o.order_uq_id = rs.id
+	JOIN users u ON u.id = rs.user_id
+	JOIN products p ON p.id = rs.product_id
+	JOIN product_variants pv ON pv.id = rs.product_variant_id
+	JOIN intervals i ON i.id = pv.interval_id
 	WHERE last_sent_at IS DISTINCT FROM $1
 	AND (
 		next_send::date = $1
@@ -31,11 +28,10 @@ func FetchReminderBatch(
 		OR next_remove::date = $1
 	)
 	ORDER BY created_at
-	LIMIT $2;
-		`
+	LIMIT $2;`
 	args = []any{today, limit}
 
-	var rows []entity.ReminderSchedule
+	var rows []entity.SubscriptionData
 	err := db.DB.Select(&rows, query, args...)
 	return rows, err
 }

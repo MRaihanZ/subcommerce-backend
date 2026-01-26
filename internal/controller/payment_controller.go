@@ -3,7 +3,9 @@ package controller
 import (
 	"net/http"
 
+	"github.com/MRaihanZ/subcommerce-backend/internal/entity"
 	"github.com/MRaihanZ/subcommerce-backend/internal/service"
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 )
 
@@ -59,6 +61,56 @@ import (
 // 	}
 // 	c.JSON(http.StatusOK, res)
 // }
+
+func MidtransPayoutHandler(c *gin.Context) {
+	session := sessions.Default(c)
+	userId := session.Get("seller_id")
+	if userId == nil {
+		msg := "id null"
+		res := entity.Response[error]{
+			Code:   http.StatusUnauthorized,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusUnauthorized, res)
+		return
+	}
+
+	var req entity.CreatePayoutRequest
+	if err := c.BindJSON(&req); err != nil {
+		msg := err.Error()
+		res := entity.Response[error]{
+			Code:   http.StatusBadRequest,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusBadRequest, res)
+		return
+	}
+
+	err := service.PayoutToSeller(req.Name, "gopay", req.PayId, req.Amount, req.Description)
+	if err != nil {
+		msg := err.Error()
+		res := entity.Response[error]{
+			Code:   http.StatusInternalServerError,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusInternalServerError, res)
+		return
+	}
+
+	res := entity.Response[string]{
+		Code:   http.StatusOK,
+		Status: "ok",
+		Data:   "success",
+		Error:  nil,
+	}
+	c.JSON(http.StatusOK, res)
+}
 
 // used in midtrans, don't change response
 func MidtransWebhookHandler(c *gin.Context) {

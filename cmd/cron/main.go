@@ -22,7 +22,7 @@ func init() {
 }
 
 func main() {
-	log.Println("✅ cron job started")
+	log.Println("✅ Starting Cron Job")
 	loc, _ := time.LoadLocation("Asia/Jakarta")
 
 	// if second enable total expression 6 if not 5
@@ -51,8 +51,9 @@ func main() {
 	// Run every day at 07:00
 	// Run every second
 	c.AddFunc("0 7 * * *", func() {
-		log.Println("reminder cron started")
+		log.Println("✅ Starting Reminder Cron")
 		service.RunReminderCron()
+		log.Println("✅ Finish Reminder Cron")
 	})
 
 	c.Start()

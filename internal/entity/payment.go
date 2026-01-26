@@ -33,3 +33,10 @@ type MidtransChargeRequest struct {
 		Finish string `json:"finish"`
 	} `json:"callbacks"`
 }
+
+type CreatePayoutRequest struct {
+	Name        string `json:"name"`
+	PayId       string `json:"Payid"`
+	Amount      int64  `json:"amount"`
+	Description string `json:"description"`
+}

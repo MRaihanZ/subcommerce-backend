@@ -92,15 +92,15 @@
 								>
 									<tr>
 										<td style="padding: 14px; background-color: #f9fafb">
-											<strong>ID</strong>
-										</td>
-										<td style="padding: 14px">{{ .ID }}</td>
-									</tr>
-									<tr>
-										<td style="padding: 14px; background-color: #f9fafb">
 											<strong>Order ID</strong>
 										</td>
 										<td style="padding: 14px">{{ .OrderID }}</td>
+									</tr>
+									<tr>
+										<td style="padding: 14px; background-color: #f9fafb">
+											<strong>Subscription ID</strong>
+										</td>
+										<td style="padding: 14px">{{ .SubscriptionID }}</td>
 									</tr>
 									<tr>
 										<td style="padding: 14px; background-color: #f9fafb">
@@ -112,9 +112,13 @@
 										<td style="padding: 14px; background-color: #f9fafb">
 											<strong>Nama Product</strong>
 										</td>
+										{{ if eq .ProductName2 "default" }}
+										<td style="padding: 14px">{{ .ProductName1 }}</td>
+										{{ else }}
 										<td style="padding: 14px">
 											{{ .ProductName1 }} - {{ .ProductName2 }}
 										</td>
+										{{ end }}
 									</tr>
 									<tr>
 										<td style="padding: 14px; background-color: #f9fafb">
@@ -187,7 +191,7 @@
 										href="{{ .Domain }}"
 										style="color: #2563eb; text-decoration: none"
 									>
-										subcommerce </a
+										subcommerce</a
 									>.
 								</p>
 							</td>

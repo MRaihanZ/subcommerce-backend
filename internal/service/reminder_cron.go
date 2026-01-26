@@ -3,44 +3,47 @@ package service
 import (
 	"log"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/MRaihanZ/subcommerce-backend/internal/entity"
 	"github.com/MRaihanZ/subcommerce-backend/internal/model"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
+
+func errorUpdateReminderSchedules() {
+	log.Println("❌ Error update data in reminder_schedules table function")
+	message := recover()
+	log.Println("❌ ERROR: ", message)
+}
+
+func errorSubscriptionReminderEmail() {
+	log.Println("❌ Error parsing html file function")
+	message := recover()
+	log.Println("ERROR: ", message)
+}
 
 const batchSize = 5
 
 func RunReminderCron() {
 	today := time.Now().Format("2006-01-02")
-	log.Println("reminder cron: starting reminder")
+	var caser cases.Caser
+	var err error
+	var rows []entity.SubscriptionData
 	for {
-		rows, err := model.FetchReminderBatch(today, batchSize)
+		rows, err = model.FetchReminderBatch(today, batchSize)
 		if err != nil {
 			log.Println("fetch error:", err)
 			return
 		}
 
 		if len(rows) == 0 {
-			log.Println("reminder cron: no more data")
+			log.Println("Reminder Cron: no more data")
 			return
 		}
 
 		for _, r := range rows {
-			emailData := entity.SubscriptionEmailData{
-				ID:              "3d08f42e-c76f-4d77-b096-31acbe7506c7",
-				OrderID:         1,
-				UserName:        "Raihan",
-				ProductName1:    "Iron Nexus Plastic",
-				ProductName2:    "A",
-				Subscription:    "2 Bulan",
-				Status:          "✅ Aktif",
-				OrderDate:       "2026-01-15 09:18:42",
-				PaymentDeadline: "2026-01-19",
-				TargetEmail:     "mraihanzhafran.14@gmail.com",
-				Domain:          os.Getenv("WEBSITE_URL"),
-			}
-
 			// 1️⃣ If is_over → delete
 			if r.IsOver {
 				_ = model.DeleteReminder(r.ID)
@@ -52,6 +55,21 @@ func RunReminderCron() {
 				continue
 			}
 
+			caser = cases.Title(language.MustParse("id-ID"))
+
+			emailData := entity.SubscriptionEmailData{
+				OrderID:         r.OrderPrettyID,
+				SubscriptionID:  r.ID,
+				UserName:        r.UName,
+				ProductName1:    r.PName,
+				ProductName2:    r.PVName,
+				Subscription:    strconv.Itoa(r.PVInterval) + " " + caser.String(r.IName),
+				OrderDate:       r.CreatedAt.Format("02-01-2006 15:04:05"),
+				PaymentDeadline: r.NextRemove.Format("02-01-2006"),
+				TargetEmail:     r.UEmail,
+				Domain:          os.Getenv("WEBSITE_URL"),
+			}
+
 			// 3️⃣ Check schedule dates
 			if checkSchedule(r.NextRemove, today) {
 				log.Println(
@@ -61,9 +79,14 @@ func RunReminderCron() {
 					r.ProductID,
 					r.ProductVariantID,
 				)
+				emailData.Status = "🛑 Jatuh Tempo"
 
-				_ = model.UpdateLastSentAt(r.ID, time.Now())
-				_ = model.UpdateIsOver(r.ID)
+				err = model.UpdateIsOver(r.ID)
+				if err != nil {
+					defer errorUpdateReminderSchedules()
+					errMessage := "Failed to update data in table reminder_schedules: " + err.Error()
+					panic(errMessage)
+				}
 			} else if checkSchedule(r.NextWarningSend, today) {
 				log.Println(
 					"WARNING: ",
@@ -72,8 +95,7 @@ func RunReminderCron() {
 					r.ProductID,
 					r.ProductVariantID,
 				)
-
-				_ = model.UpdateLastSentAt(r.ID, time.Now())
+				emailData.Status = "⚠️ Akan Berakhir"
 			} else if checkSchedule(r.NextSend, today) {
 				log.Println(
 					"PROCESS: ",
@@ -82,18 +104,25 @@ func RunReminderCron() {
 					r.ProductID,
 					r.ProductVariantID,
 				)
-
-				_ = model.UpdateLastSentAt(r.ID, time.Now())
+				emailData.Status = "✅ Aktif"
 			}
 
+			err = model.UpdateLastSentAt(r.ID, time.Now())
+			if err != nil {
+				defer errorUpdateReminderSchedules()
+				errMessage := "Failed to update data in table reminder_schedules: " + err.Error()
+				panic(errMessage)
+			}
 			htmlBody, err := RenderSubscriptionEmail(emailData, "E:/GIU/Devel/go_app/subcommerce-backend/internal/templates/email_schedule_reminder.html")
 			if err != nil {
-				log.Fatal(err)
+				defer errorSubscriptionReminderEmail()
+				errMessage := "Failed to parse html file for subscription reminder email template: " + err.Error()
+				panic(errMessage)
 			}
 
 			sender := NewBrevoSender()
 			_ = sender.SendMail(
-				"mraihanzhafran.14@gmail.com",
+				r.UEmail,
 				"Pengingat Langganan Product Subcommerce",
 				htmlBody,
 			)

@@ -103,6 +103,7 @@ func main() {
 	order.GET("/", controller.GetOrdersHandler)
 	order.GET("/seller", controller.GetOrderSellerHandler)
 	order.POST("/", controller.CreateOrderHandler)
+	order.POST("/cancel/:order_id", controller.CancelOrderHandler)
 	order.PATCH("/:order_id/:status_id", controller.UpdateStatusOrderHandler)
 	order.GET("/checkouts", controller.GetCheckoutOrdersHandler)
 	order.POST("/checkouts", controller.CreateCheckoutOrderHandler)
@@ -112,8 +113,9 @@ func main() {
 	order.PATCH("/", controller.UpdateOrderHandler)
 
 	// payment
-	payments := v1.Group("payments")
+	payments := v1.Group("/payments")
 	// payments.POST("/", controller.CreatePaymentHandler)
+	payments.POST("/payout", controller.MidtransPayoutHandler)
 	payments.POST("/webhook", controller.MidtransWebhookHandler)
 
 	// products
@@ -144,6 +146,7 @@ func main() {
 	// subscription
 	subscriptions := v1.Group("/subscriptions")
 	subscriptions.GET("/", controller.GetAllSubscriptionsByUserHandler)
+	subscriptions.GET("/seller", controller.GetAllSubscriptionsBySellerHandler)
 	subscriptions.POST("/", controller.CreateOrderSubscriptionHandler)
 	subscriptions.DELETE("/:order_id", controller.DeleteSubscription)
 

@@ -15,6 +15,7 @@ func CreatePayment(orderID string, amount int64, userId interface{}, state strin
 		return "", "", err
 	}
 
+	// i save this for later on, even though it's not being used
 	// payment := &model.Payment{
 	// 	ID:         uuid.New().String(),
 	// 	OrderID:    orderID,
@@ -31,6 +32,27 @@ func CreatePayment(orderID string, amount int64, userId interface{}, state strin
 	// }
 
 	return paymentURL, orderId, nil
+}
+
+func CancelPayment(orderId string) error {
+	return utils.CancelMidtransPayment(orderId)
+}
+
+func PayoutToSeller(
+	sellerName string,
+	bankCode string,
+	accountNumber string,
+	amount int64,
+	description string,
+) error {
+
+	return utils.CreateMidtransDisbursement(
+		sellerName,
+		bankCode,
+		accountNumber,
+		amount,
+		description,
+	)
 }
 
 func HandleWebhook(orderID string, transactionStatus string) error {
@@ -50,7 +72,7 @@ func HandleWebhook(orderID string, transactionStatus string) error {
 			"settlement": 13,
 			"capture":    13,
 			"pending":    11,
-			"expire":     3,
+			"expire":     2,
 			"cancel":     2,
 			"deny":       12,
 		}
@@ -59,7 +81,7 @@ func HandleWebhook(orderID string, transactionStatus string) error {
 			"settlement": 4,
 			"capture":    4,
 			"pending":    11,
-			"expire":     3,
+			"expire":     2,
 			"cancel":     2,
 			"deny":       12,
 		}
@@ -76,9 +98,82 @@ func HandleWebhook(orderID string, transactionStatus string) error {
 		if id == nil {
 			log.Println("ERROR IN PAYMENT WEBHOOK, WHEN UPDATE ID REMINDER SCHEDULE: ", id)
 		}
+
+		// dataOrderUser, err := model.GetUserIdFromOrders(newOrderID)
+		// if err != nil {
+		// 	var code int
+		// 	var msg string
+		// 	switch {
+		// 	case errors.Is(err, errs.ErrNoOrderFound):
+		// 		code = http.StatusNotFound
+		// 		msg = err.Error()
+		// 	default:
+		// 		code = http.StatusInternalServerError
+		// 		msg = "internal server error"
+		// 	}
+		// 	res := entity.Response[error]{
+		// 		Code:   code,
+		// 		Status: "error",
+		// 		Data:   nil,
+		// 		Error:  &msg,
+		// 	}
+		// 	c.JSON(code, res)
+		// 	return
+		// }
+
+		// dataIntervalProduct, err := model.GetIntervalProduct(dataOrderUser.ProductId, dataOrderUser.ProductVariantId)
+		// if err != nil {
+		// 	var code int
+		// 	var msg string
+		// 	switch {
+		// 	case errors.Is(err, errs.ErrNoProductFound):
+		// 		code = http.StatusNotFound
+		// 		msg = err.Error()
+		// 	default:
+		// 		code = http.StatusInternalServerError
+		// 		msg = "internal server error"
+		// 	}
+		// 	res := entity.Response[error]{
+		// 		Code:   code,
+		// 		Status: "error",
+		// 		Data:   nil,
+		// 		Error:  &msg,
+		// 	}
+		// 	c.JSON(code, res)
+		// 	return
+		// }
+
+		// start := time.Now()
+		// next, warning, remove := utils.CalculateReminderDates(
+		// 	start,
+		// 	dataIntervalProduct.Id,
+		// 	dataIntervalProduct.Interval,
+		// )
+
+		// _, err = model.CreateReminderSchedule(*status, *dataOrderUser, next, warning, remove)
+		// if err != nil {
+		// 	msg := err.Error()
+		// 	res := entity.Response[error]{
+		// 		Code:   http.StatusInternalServerError,
+		// 		Status: "error",
+		// 		Data:   nil,
+		// 		Error:  &msg,
+		// 	}
+		// 	c.JSON(http.StatusInternalServerError, res)
+		// 	return
+		// }
 	}
 
 	_, err = model.UpdateStatusOrder(newOrderID, status)
 
 	return err
+}
+
+func IsPaymentLinkActive(orderId string) (bool, error) {
+	status, err := utils.GetMidtransTransactionStatus(orderId)
+	if err != nil {
+		return false, err
+	}
+
+	return status == "pending", nil
 }
