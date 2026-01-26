@@ -141,7 +141,7 @@ func UpdateReminderScheduleInterval(id string, next, warning, remove time.Time) 
 	SET next_send = $1, next_warning_send = $2,
 	next_remove = $3
 	WHERE id = $4
-	RETURNING id`, id, next, warning, remove).Scan(&returnId)
+	RETURNING id`, next, warning, remove, id).Scan(&returnId)
 	if err != nil {
 		return nil, err
 	}
