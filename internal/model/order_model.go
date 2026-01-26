@@ -548,7 +548,7 @@ func GetNextRemoveReminderSchedule(orderUqId string) (*time.Time, error) {
 	var nextRemove time.Time
 	err := db.DB.GetContext(ctx, &nextRemove, `SELECT next_remove
 	FROM reminder_schedules
-	WHERE id = $1;`, orderUqId)
+	WHERE id = $1;`, nextRemove)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, errs.ErrNoSubscriptionFound
