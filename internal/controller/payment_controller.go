@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/MRaihanZ/subcommerce-backend/internal/entity"
+	"github.com/MRaihanZ/subcommerce-backend/internal/model"
 	"github.com/MRaihanZ/subcommerce-backend/internal/service"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
@@ -64,8 +65,8 @@ import (
 
 func MidtransPayoutHandler(c *gin.Context) {
 	session := sessions.Default(c)
-	userId := session.Get("seller_id")
-	if userId == nil {
+	sellerId := session.Get("seller_id")
+	if sellerId == nil {
 		msg := "id null"
 		res := entity.Response[error]{
 			Code:   http.StatusUnauthorized,
@@ -90,7 +91,20 @@ func MidtransPayoutHandler(c *gin.Context) {
 		return
 	}
 
-	err := service.PayoutToSeller(req.Name, "gopay", req.PayId, req.Amount, req.Description)
+	// err := service.PayoutToSeller(req.Name, "gopay", req.PayId, req.Amount, req.Description)
+	// if err != nil {
+	// 	msg := err.Error()
+	// 	res := entity.Response[error]{
+	// 		Code:   http.StatusInternalServerError,
+	// 		Status: "error",
+	// 		Data:   nil,
+	// 		Error:  &msg,
+	// 	}
+	// 	c.JSON(http.StatusInternalServerError, res)
+	// 	return
+	// }
+
+	_, err := model.CreatePayout(sellerId, req.Name, req.PayId, req.Description, req.Amount)
 	if err != nil {
 		msg := err.Error()
 		res := entity.Response[error]{

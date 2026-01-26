@@ -173,14 +173,14 @@ func CreateMidtransDisbursement(
 	amount int64,
 	description string,
 ) error {
-	url := fmt.Sprintf("%s/v1/disbursements", os.Getenv("MIDTRANS_API_BASE"))
+	url := fmt.Sprintf("%s/v1/payout", os.Getenv("MIDTRANS_API_BASE"))
 
 	reqBody := map[string]interface{}{
-		"name":        name,
-		"bank":        bank,
-		"account":     account,
-		"amount":      amount,
-		"description": description,
+		"name":           name,
+		"bank":           bank,
+		"account_number": account,
+		"amount":         amount,
+		"description":    description,
 	}
 
 	body, _ := json.Marshal(reqBody)

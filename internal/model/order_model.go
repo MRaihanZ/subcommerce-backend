@@ -128,7 +128,7 @@ func CreateOrder(id interface{}, order []entity.OrderRequest, paymentUrl string,
 	reqData := []string{}
 
 	for i, arg := range order {
-		n := i*9 + 1
+		n := i*11 + 1
 		reqData = append(reqData, fmt.Sprintf(`($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, 'INV-' || TO_CHAR(NOW(), 'YYYYMMDD') || '-' ||
   		LPAD(nextval('orders_order_pretty_id_seq')::text, 4, '0'))`, n, n+1, n+2, n+3, n+4, n+5, n+6, n+7, n+8, n+9, n+10))
 		args = append(args, id, arg.PayId, 1, arg.PId, arg.PVId, paymentUrl, arg.Note, arg.Quantity, arg.UnitPrice, arg.TotalPrice, orderId)
