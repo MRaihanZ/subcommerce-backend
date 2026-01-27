@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<title>Payout Status – In Queue</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+		<style>
+			body {
+				margin: 0;
+				padding: 0;
+				background-color: #f4f6f8;
+				font-family:
+					-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial,
+					sans-serif;
+				color: #1f2937;
+			}
+
+			.email-wrapper {
+				width: 100%;
+				padding: 32px 12px;
+			}
+
+			.email-container {
+				max-width: 600px;
+				margin: 0 auto;
+				background-color: #ffffff;
+				border-radius: 8px;
+				overflow: hidden;
+				box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+			}
+
+			.email-header {
+				background-color: #0f172a;
+				padding: 24px;
+				text-align: center;
+			}
+
+			.email-header h1 {
+				margin: 0;
+				font-size: 20px;
+				color: #ffffff;
+				font-weight: 600;
+				letter-spacing: 0.3px;
+			}
+
+			.email-body {
+				padding: 32px 24px;
+			}
+
+			.greeting {
+				font-size: 16px;
+				margin-bottom: 16px;
+			}
+
+			.description {
+				font-size: 14px;
+				line-height: 1.6;
+				color: #4b5563;
+				margin-bottom: 24px;
+			}
+
+			.status-box {
+				background-color: #fef3c7;
+				border: 1px solid #fde68a;
+				border-radius: 6px;
+				padding: 16px;
+				margin-bottom: 24px;
+			}
+
+			.status-title {
+				font-size: 14px;
+				font-weight: 600;
+				color: #92400e;
+				margin-bottom: 8px;
+			}
+
+			.status-value {
+				font-size: 18px;
+				font-weight: 700;
+				color: #92400e;
+			}
+
+			.details-table {
+				width: 100%;
+				border-collapse: collapse;
+				margin-bottom: 24px;
+			}
+
+			.details-table td {
+				padding: 10px 0;
+				font-size: 14px;
+			}
+
+			.details-table td.label {
+				color: #6b7280;
+				width: 40%;
+			}
+
+			.details-table td.value {
+				color: #111827;
+				font-weight: 500;
+				text-align: right;
+			}
+
+			.note {
+				font-size: 13px;
+				color: #6b7280;
+				line-height: 1.6;
+				margin-bottom: 24px;
+			}
+
+			.email-footer {
+				background-color: #f9fafb;
+				padding: 20px 24px;
+				text-align: center;
+				font-size: 12px;
+				color: #9ca3af;
+			}
+
+			.email-footer a {
+				color: #2563eb;
+				text-decoration: none;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div class="email-wrapper">
+			<div class="email-container">
+				<!-- Header -->
+				<div class="email-header">
+					<h1>Informasi Status Pencairan Dana</h1>
+				</div>
+
+				<!-- Body -->
+				<div class="email-body">
+					<div class="greeting">Hi {{ .SellerName }},</div>
+
+					<div class="description">
+						Kami ingin menginformasikan bahwa permintaan pencairan dana Anda
+						telah berhasil diterima dan saat ini sedang dalam antrean proses.
+					</div>
+
+					<!-- Status -->
+					<div class="status-box">
+						<div class="status-title">Status</div>
+						<div class="status-value">Dalam Antrian</div>
+					</div>
+
+					<!-- Details -->
+					<table class="details-table">
+						<tr>
+							<td class="label">ID</td>
+							<td class="value">{{ .Id }}</td>
+						</tr>
+						<tr>
+							<td class="label">Atas Nama</td>
+							<td class="value">{{ .TransferName }}</td>
+						</tr>
+						<tr>
+							<td class="label">Tipe Transfer</td>
+							<td class="value">{{ .TransferType }}</td>
+						</tr>
+						<tr>
+							<td class="label">Jumlah Transfer</td>
+							<td class="value">{{ .TransferAmount }}</td>
+						</tr>
+						<tr>
+							<td class="label">Tanggal Pengajuan</td>
+							<td class="value">{{ .CreatedAt }}</td>
+						</tr>
+					</table>
+
+					<div class="note">
+						Pencairan dana akan diproses sesuai urutan permintaan yang diterima.
+						Setelah pencairan dana Anda diproses, kami akan mengirimkan email
+						notifikasi lanjutan.
+					</div>
+				</div>
+
+				<!-- Footer -->
+				<div class="email-footer">
+					<p>Email ini dikirim secara otomatis oleh sistem Subcommerce.</p>
+					<p>© 2026 Subcommerce. Semua hak dilindungi.</p>
+				</div>
+			</div>
+		</div>
+	</body>
+</html>

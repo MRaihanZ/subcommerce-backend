@@ -26,3 +26,12 @@ type CancelationSubscriptionByUserEmailData struct {
 	Timestamp          string
 	Domain             string
 }
+
+type PayoutEmail struct {
+	SellerName     string
+	Id             string
+	TransferName   string
+	TransferType   string
+	TransferAmount int64
+	CreatedAt      string
+}

@@ -49,6 +49,20 @@ func RenderSubscriptionCancelationByUserEmail(data entity.CancelationSubscriptio
 	return buf.String(), nil
 }
 
+func RenderPayoutEmail(data entity.PayoutEmail, htmlPath string) (string, error) {
+	tmpl, err := template.ParseFiles(htmlPath)
+	if err != nil {
+		return "", err
+	}
+
+	var buf bytes.Buffer
+	if err := tmpl.Execute(&buf, data); err != nil {
+		return "", err
+	}
+
+	return buf.String(), nil
+}
+
 type BrevoSender struct {
 	apiKey string
 }

@@ -344,3 +344,23 @@ func UpdateActiveProduct(productId int, active bool) (*int, error) {
 	}
 	return &returnId, nil
 }
+
+func GetPayoutEmailData(payoutId interface{}) (*entity.PayoutEmailData, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var data entity.PayoutEmailData
+	err := db.DB.GetContext(ctx, &data, `SELECT s.name, u.email, p.transfer_name, p.transfer_amount
+	FROM payout p
+	JOIN sellers s ON s.id = p.seller_id
+	JOIN users u ON u.id = s.user_id
+	WHERE p.id = $1;`, payoutId)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &data, nil
+}

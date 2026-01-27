@@ -1,7 +1,9 @@
 package controller
 
 import (
+	"log"
 	"net/http"
+	"time"
 
 	"github.com/MRaihanZ/subcommerce-backend/internal/entity"
 	"github.com/MRaihanZ/subcommerce-backend/internal/model"
@@ -104,7 +106,7 @@ func MidtransPayoutHandler(c *gin.Context) {
 	// 	return
 	// }
 
-	_, err := model.CreatePayout(sellerId, req.Name, req.PayId, req.Description, req.Amount)
+	payoutId, err := model.CreatePayout(sellerId, req.Name, req.PayId, req.Description, req.Amount)
 	if err != nil {
 		msg := err.Error()
 		res := entity.Response[error]{
@@ -116,6 +118,92 @@ func MidtransPayoutHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, res)
 		return
 	}
+
+	wallet, err := model.GetCurrentWalletAmmount(sellerId)
+	if err != nil {
+		msg := err.Error()
+		res := entity.Response[error]{
+			Code:   http.StatusInternalServerError,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusInternalServerError, res)
+		return
+	}
+
+	if wallet == nil {
+		msg := "seller tidak ditemukan"
+		res := entity.Response[error]{
+			Code:   http.StatusInternalServerError,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusInternalServerError, res)
+		return
+	}
+
+	newWallet := *wallet - req.Amount
+
+	_, err = model.UpdateWalletSellerById(sellerId, newWallet)
+	if err != nil {
+		msg := err.Error()
+		res := entity.Response[error]{
+			Code:   http.StatusInternalServerError,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusInternalServerError, res)
+		return
+	}
+
+	sellerData, err := model.GetSellerNameEmailById(sellerId)
+	if err != nil {
+		msg := err.Error()
+		res := entity.Response[error]{
+			Code:   http.StatusInternalServerError,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusInternalServerError, res)
+		return
+	}
+
+	if sellerData == nil {
+		msg := "seller tidak ditemukan"
+		res := entity.Response[error]{
+			Code:   http.StatusInternalServerError,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusInternalServerError, res)
+		return
+	}
+	today := time.Now()
+	emailData := entity.PayoutEmail{
+		SellerName:     sellerData.Name,
+		Id:             *payoutId,
+		TransferName:   req.Name,
+		TransferType:   "gopay",
+		TransferAmount: req.Amount,
+		CreatedAt:      today.Format("02-01-2006 15:04:05"),
+	}
+
+	htmlBody, err := service.RenderPayoutEmail(emailData, "E:/GIU/Devel/go_app/subcommerce-backend/internal/templates/payout_queue.html")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	sender := service.NewBrevoSender()
+	_ = sender.SendMail(
+		sellerData.Email,
+		"Informasi Status Pencairan Dana Penjual Subcommerce",
+		htmlBody,
+	)
 
 	res := entity.Response[string]{
 		Code:   http.StatusOK,

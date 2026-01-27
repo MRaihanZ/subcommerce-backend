@@ -17,3 +17,10 @@ type UpdateAdmin struct {
 	Email    string `form:"email"`
 	Password string `form:"password"`
 }
+
+type PayoutEmailData struct {
+	SellerName string `db:"name"`
+	Email      string `db:"email"`
+	Name       string `db:"transfer_name"`
+	Amount     int64  `db:"transfer_amount"`
+}

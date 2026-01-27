@@ -37,3 +37,8 @@ type UpdateSeller struct {
 	ImgPath string `form:"imgPath"`
 	Address string `form:"address"`
 }
+
+type SellerNameEmail struct {
+	Name  string `db:"name"`
+	Email string `db:"email"`
+}

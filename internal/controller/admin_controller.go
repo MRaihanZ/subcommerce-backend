@@ -2,8 +2,10 @@ package controller
 
 import (
 	"errors"
+	"log"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/MRaihanZ/subcommerce-backend/internal/entity"
 	"github.com/MRaihanZ/subcommerce-backend/internal/errs"
@@ -1528,4 +1530,144 @@ func DeleteProductByAdminHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, res)
 		return
 	}
+}
+
+func GetPayoutsHandler(c *gin.Context) {
+	session := sessions.Default(c)
+	idSession := session.Get("admin_id")
+	if idSession == nil || idSession == "noId" {
+		msg := "id null"
+		res := entity.Response[error]{
+			Code:   http.StatusUnauthorized,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusUnauthorized, res)
+		return
+	}
+
+	payouts, err := model.GetPayouts(c.Request.Context())
+	if err != nil {
+		msg := "Payout tidak ditemukan"
+		res := entity.Response[error]{
+			Code:   http.StatusInternalServerError,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusInternalServerError, res)
+		return
+	}
+
+	res := entity.Response[[]entity.Payout]{
+		Code:   http.StatusOK,
+		Status: "ok",
+		Data:   payouts,
+		Error:  nil,
+	}
+	c.JSON(http.StatusOK, res)
+}
+
+func UpdatePayoutStatusHandler(c *gin.Context) {
+	session := sessions.Default(c)
+	idSession := session.Get("admin_id")
+	if idSession == nil || idSession == "noId" {
+		msg := "id null"
+		res := entity.Response[error]{
+			Code:   http.StatusUnauthorized,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusUnauthorized, res)
+		return
+	}
+
+	payoutID := c.Param("id")
+
+	var req entity.UpdatePayoutStatusRequest
+	if err := c.BindJSON(&req); err != nil {
+		msg := "invalid request body"
+		res := entity.Response[error]{
+			Code:   http.StatusBadRequest,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusBadRequest, res)
+		return
+	}
+
+	err := model.UpdatePayoutStatus(
+		c.Request.Context(),
+		payoutID,
+		req.Status,
+	)
+	if err != nil {
+		msg := "gagal untuk mengubah payout status"
+		res := entity.Response[error]{
+			Code:   http.StatusInternalServerError,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusInternalServerError, res)
+		return
+	}
+
+	payoutEmailData, err := model.GetPayoutEmailData(payoutID)
+	if err != nil {
+		msg := "gagal untuk mengambil data untuk email"
+		res := entity.Response[error]{
+			Code:   http.StatusInternalServerError,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusInternalServerError, res)
+		return
+	}
+
+	if payoutEmailData == nil {
+		msg := "tidak ada payout data"
+		res := entity.Response[error]{
+			Code:   http.StatusNotFound,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusInternalServerError, res)
+		return
+	}
+	// kirim email ke seller
+	today := time.Now()
+	emailData := entity.PayoutEmail{
+		SellerName:     payoutEmailData.SellerName,
+		Id:             payoutID,
+		TransferName:   payoutEmailData.Name,
+		TransferType:   "gopay",
+		TransferAmount: payoutEmailData.Amount,
+		CreatedAt:      today.Format("02-01-2006 15:04:05"),
+	}
+
+	htmlBody, err := service.RenderPayoutEmail(emailData, "E:/GIU/Devel/go_app/subcommerce-backend/internal/templates/payout_process.html")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	sender := service.NewBrevoSender()
+	_ = sender.SendMail(
+		payoutEmailData.Email,
+		"Informasi Status Pencairan Dana Penjual Subcommerce",
+		htmlBody,
+	)
+
+	res := entity.Response[string]{
+		Code:   http.StatusOK,
+		Status: "ok",
+		Data:   "payout status diperbarui",
+		Error:  nil,
+	}
+	c.JSON(http.StatusOK, res)
 }

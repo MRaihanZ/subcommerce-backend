@@ -186,5 +186,9 @@ func main() {
 	admins.PATCH("/products/:product_id/:active", controller.UpdateActiveProductHandler)
 	admins.DELETE("/products/:product_id/:product_variant_id", controller.DeleteProductByAdminHandler)
 
+	// payout management by admin
+	admins.GET("/payout", controller.GetPayoutsHandler)
+	admins.PATCH("/payout/:id", controller.UpdatePayoutStatusHandler)
+
 	r.Run(os.Getenv("APP_PORT"))
 }

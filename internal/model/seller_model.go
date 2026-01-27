@@ -88,3 +88,53 @@ func DeleteSeller(id interface{}) (*string, error) {
 
 	return &deletedName, nil
 }
+
+func GetCurrentWalletAmmount(sellerId interface{}) (*int64, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var wallet int64
+	err := db.DB.GetContext(ctx, &wallet, "SELECT wallet FROM sellers WHERE id = $1", sellerId)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &wallet, nil
+}
+
+func UpdateWalletSellerById(sellerId interface{}, amount int64) (*string, error) {
+	var seller string
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	err := db.DB.QueryRowxContext(ctx, "UPDATE sellers SET wallet = $1 WHERE id = $2 RETURNING id",
+		amount, sellerId).Scan(&seller)
+	if err != nil {
+		return nil, err
+	}
+
+	return &seller, nil
+}
+
+func GetSellerNameEmailById(sellerId interface{}) (*entity.SellerNameEmail, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var data entity.SellerNameEmail
+	err := db.DB.GetContext(ctx, &data, `SELECT s.name, u.email
+	FROM sellers s
+	JOIN users u ON u.id = s.user_id
+	WHERE s.id = $1;`, sellerId)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &data, nil
+}
