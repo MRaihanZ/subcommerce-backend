@@ -111,6 +111,19 @@ func CreateRatingHandler(c *gin.Context) {
 		return
 	}
 
+	_, err = model.UpdateRatingProductSeller(numProdId, req)
+	if err != nil {
+		msg := err.Error()
+		res := entity.Response[error]{
+			Code:   http.StatusInternalServerError,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusInternalServerError, res)
+		return
+	}
+
 	res := entity.Response[*int]{
 		Code:   http.StatusOK,
 		Status: "ok",

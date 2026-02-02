@@ -112,6 +112,12 @@ type GetUserProductProductVariant struct {
 	ProductVariantId int    `db:"product_variant_id"`
 }
 
+type GetQuantityProductProductVariant struct {
+	Quantity         string `db:"quantity"`
+	ProductId        int    `db:"product_id"`
+	ProductVariantId int    `db:"product_variant_id"`
+}
+
 type IntervalProduct struct {
 	Id       int `db:"interval_id"`
 	Interval int `db:"interval"`

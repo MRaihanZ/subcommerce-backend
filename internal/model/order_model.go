@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -229,6 +230,77 @@ func GetIntervalProduct(productId, productVariantId int) (*entity.IntervalProduc
 	}
 
 	return &res, nil
+}
+
+func GetQuantityFromOrder(orderUqId string) (*entity.GetQuantityProductProductVariant, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var res entity.GetQuantityProductProductVariant
+	err := db.DB.GetContext(ctx, &res, `SELECT quantity, product_id, product_variant_id
+	FROM orders WHERE order_uq_id = $1`, orderUqId)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errs.ErrNoProductFound
+		}
+		return nil, err
+	}
+
+	return &res, nil
+}
+
+func UpdateSoldProduct(data *entity.GetQuantityProductProductVariant, orderUqId, sellerId string) (*int, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var returnSellerId string
+	err := db.DB.QueryRowContext(ctx, `UPDATE sellers SET total_sold_products = total_sold_products + $1
+	WHERE id = $2
+	RETURNING id`, data.Quantity, sellerId).Scan(&returnSellerId)
+	if err != nil {
+		log.Println("seller error")
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errs.ErrNoSellerFound
+		}
+		return nil, err
+	}
+
+	var returnProductId int
+	err = db.DB.QueryRowContext(ctx, `UPDATE products SET sold = sold + $1
+	WHERE id = $2
+	RETURNING id`, data.Quantity, data.ProductId).Scan(&returnProductId)
+	if err != nil {
+		log.Println("sold error")
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errs.ErrNoProductFound
+		}
+		return nil, err
+	}
+
+	err = db.DB.QueryRowContext(ctx, `
+	WITH updated AS (
+	UPDATE product_variants
+	SET
+		sold  = sold + $1,
+		stock = stock - $1
+	WHERE id = $2
+	RETURNING product_id, stock, min_order
+	)
+	UPDATE products p
+	SET active = false
+	FROM updated u
+	WHERE p.id = u.product_id
+	AND u.min_order >= u.stock
+	RETURNING p.id;
+	`, data.Quantity, data.ProductVariantId).Scan(&returnProductId)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &returnProductId, nil
 }
 
 func CreateReminderSchedule(orderUqId string, data entity.GetUserProductProductVariant, next, warning, remove time.Time) (*string, error) {

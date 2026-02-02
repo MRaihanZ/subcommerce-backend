@@ -51,6 +51,34 @@ func CreateRating(productId int, productVariantId int, orderId int, userId inter
 	return &rating, nil
 }
 
+func UpdateRatingProductSeller(productId int, req *entity.RatingRequest) (*string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var returnId string
+	err := db.DB.QueryRowContext(ctx, `
+	WITH updated_product AS (
+	UPDATE products SET rating_count = rating_count + 1, rating_total = rating_total + $1, average_rating = ((rating_total + $1)::numeric / (rating_count + 1))::numeric(4,3)
+	WHERE id = $2
+	RETURNING seller_id
+	)
+	
+	UPDATE sellers SET rating_count = rating_count + 1, rating_total = rating_total + $1, average_rating = ((rating_total + $1)::numeric / (rating_count + 1))::numeric(4,3)
+	WHERE id = (
+		SELECT seller_id
+		FROM updated_product
+	) RETURNING id;
+	`, req.Rating, productId).Scan(&returnId)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errs.ErrNoOrderFound
+		}
+		return nil, err
+	}
+
+	return &returnId, nil
+}
+
 func GetRatingByProdId(productId int) (*entity.Rating, error) {
 	var rating entity.Rating
 	err := db.DB.Get(&rating, "SELECT average_rating, rating_count FROM products WHERE id = $1", productId)

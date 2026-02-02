@@ -8,4 +8,5 @@ var (
 	ErrNoCheckoutFound          = errors.New("produk checkout tidak ditemukan")
 	ErrNoPaymentFound           = errors.New("jenis pembayaran tidak ditemukan")
 	ErrNoOrderSubscriptionFound = errors.New("Order langganan tidak ditemukan")
+	ErrNoSellerFound            = errors.New("Seller tidak ditemukan")
 )
