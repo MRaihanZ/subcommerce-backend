@@ -36,6 +36,7 @@ type OrderGetResponse struct {
 type OrderGetResponseBySeller struct {
 	OrderID          int    `db:"order_id" json:"order_id"`
 	OrderPrettyID    string `db:"order_pretty_id" json:"order_pretty_id"`
+	UId              string `db:"u_id" json:"u_id"`
 	UName            string `db:"u_name" json:"u_name"`
 	UImg             string `db:"u_img" json:"u_img"`
 	ProductID        int    `db:"product_id" json:"product_id"`

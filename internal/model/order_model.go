@@ -55,7 +55,7 @@ func GetOrderBySellerID(sellerId interface{}, stateAction, orderCreated, orderId
 	switch stateAction {
 	case "next":
 		// Get the next order
-		query = `SELECT o.id AS order_id, o.order_pretty_id, u.name AS u_name, u.img AS u_img, o.product_id, 
+		query = `SELECT o.id AS order_id, o.order_pretty_id, u.id AS u_id, u.name AS u_name, u.img AS u_img, o.product_id, 
 		o.product_variant_id, p.name AS p_name, pv.name AS pv_name, pi.img AS p_img, o.quantity,
 		pv.interval, i.name AS i_name, pay.name AS pay_name, os.name AS os_name, o.total_price, o.created_at
 		FROM orders o
@@ -74,7 +74,7 @@ func GetOrderBySellerID(sellerId interface{}, stateAction, orderCreated, orderId
 		args = []interface{}{sellerId, orderCreated, orderId}
 	case "previous":
 		// Get the previous order
-		query = `SELECT o.id AS order_id, o.order_pretty_id, u.name AS u_name, u.img AS u_img, o.product_id, 
+		query = `SELECT o.id AS order_id, o.order_pretty_id, u.id AS u_id, u.name AS u_name, u.img AS u_img, o.product_id, 
 		o.product_variant_id, p.name AS p_name, pv.name AS pv_name, pi.img AS p_img, o.quantity,
 		pv.interval, i.name AS i_name, pay.name AS pay_name, os.name AS os_name, o.total_price, o.created_at
 		FROM orders o
@@ -93,7 +93,7 @@ func GetOrderBySellerID(sellerId interface{}, stateAction, orderCreated, orderId
 		args = []interface{}{sellerId, orderCreated, orderId}
 	default:
 		//get the first order
-		query = `SELECT o.id AS order_id, o.order_pretty_id, u.name AS u_name, u.img AS u_img, o.product_id, 
+		query = `SELECT o.id AS order_id, o.order_pretty_id, u.id AS u_id, u.name AS u_name, u.img AS u_img, o.product_id, 
 		o.product_variant_id, p.name AS p_name, pv.name AS pv_name, pi.img AS p_img, o.quantity,
 		pv.interval, i.name AS i_name, pay.name AS pay_name, os.name AS os_name, o.total_price, o.created_at
 		FROM orders o
