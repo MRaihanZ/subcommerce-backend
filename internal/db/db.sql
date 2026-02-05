@@ -45,7 +45,7 @@ CREATE TABLE
         id UUID PRIMARY KEY,
         name VARCHAR(50) NOT NULL,
         email TEXT NOT NULL,
-        password VARCHAR(60) NOT NULL
+        password TEXT NOT NULL
     );
 
 CREATE TABLE
