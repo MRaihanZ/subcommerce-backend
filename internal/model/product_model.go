@@ -181,6 +181,7 @@ func GetAllProductsHotSummarize(min int, max int) ([]entity.ProductSummarize, er
 			SELECT pv.id, pv.name, pv.price, pv.discount
 			FROM product_variants pv
 			WHERE pv.product_id = p.id
+			AND pv.sold > 50
 			ORDER BY pv.sold DESC
 			LIMIT 1
 		) pv ON true
