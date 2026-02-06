@@ -372,7 +372,7 @@ func DeleteSubscription(c *gin.Context) {
 		Domain:             os.Getenv("WEBSITE_URL"),
 	}
 
-	htmlBody, err := service.RenderSubscriptionCancelationByUserEmail(emailData, "E:/GIU/Devel/go_app/subcommerce-backend/internal/templates/seller_subscription_cancellation.html")
+	htmlBody, err := service.RenderSubscriptionCancelationByUserEmail(emailData, os.Getenv("TEMPLATES_PATH")+"/seller_subscription_cancellation.html")
 	if err != nil {
 		log.Fatal(err)
 	}

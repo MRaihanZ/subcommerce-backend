@@ -113,7 +113,7 @@ func RunReminderCron() {
 				errMessage := "Failed to update data in table reminder_schedules: " + err.Error()
 				panic(errMessage)
 			}
-			htmlBody, err := RenderSubscriptionEmail(emailData, "E:/GIU/Devel/go_app/subcommerce-backend/internal/templates/email_schedule_reminder.html")
+			htmlBody, err := RenderSubscriptionEmail(emailData, os.Getenv("TEMPLATES_PATH")+"/email_schedule_reminder.html")
 			if err != nil {
 				defer errorSubscriptionReminderEmail()
 				errMessage := "Failed to parse html file for subscription reminder email template: " + err.Error()

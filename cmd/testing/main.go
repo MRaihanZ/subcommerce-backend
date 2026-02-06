@@ -33,7 +33,7 @@ func SendMail() {
 		Domain:          os.Getenv("WEBSITE_URL"),
 	}
 
-	htmlBody, err := service.RenderSubscriptionEmail(emailData, "E:/GIU/Devel/go_app/subcommerce-backend/internal/templates/email_schedule_reminder.html")
+	htmlBody, err := service.RenderSubscriptionEmail(emailData, os.Getenv("TEMPLATES_PATH")+"/email_schedule_reminder.html")
 	if err != nil {
 		log.Fatal(err)
 	}

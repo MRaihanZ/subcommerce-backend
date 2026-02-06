@@ -3,6 +3,7 @@ package controller
 import (
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/MRaihanZ/subcommerce-backend/internal/entity"
@@ -193,7 +194,7 @@ func MidtransPayoutHandler(c *gin.Context) {
 		CreatedAt:      today.Format("02-01-2006 15:04:05"),
 	}
 
-	htmlBody, err := service.RenderPayoutEmail(emailData, "E:/GIU/Devel/go_app/subcommerce-backend/internal/templates/payout_queue.html")
+	htmlBody, err := service.RenderPayoutEmail(emailData, os.Getenv("TEMPLATES_PATH")+"/payout_queue.html")
 	if err != nil {
 		log.Fatal(err)
 	}
