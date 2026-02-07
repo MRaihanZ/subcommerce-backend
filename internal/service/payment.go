@@ -126,7 +126,19 @@ func HandleWebhook(orderID string, transactionStatus string) error {
 		}
 	}
 
-	_, err = model.UpdateStatusOrder(newOrderID, status)
+	paymentLInk, err := model.GetPaymentLink(newOrderID)
+	if err != nil {
+		log.Println("ERROR IN PAYMENT WEBHOOK, WHEN GET PAYMENT LINK: ", err)
+	}
+
+	if paymentLInk == nil {
+		log.Println("ERROR IN PAYMENT WEBHOOK, WHEN GET PAYMENT LINK: ", err)
+	}
+
+	err = model.UpdateStatusOrderPaymentLink(*paymentLInk, status)
+	if err != nil {
+		log.Println("ERROR IN PAYMENT WEBHOOK, WHEN UPDATE STATUS ORDER: ", err)
+	}
 
 	return err
 }

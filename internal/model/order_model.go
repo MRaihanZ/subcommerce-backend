@@ -12,6 +12,7 @@ import (
 	"github.com/MRaihanZ/subcommerce-backend/internal/db"
 	"github.com/MRaihanZ/subcommerce-backend/internal/entity"
 	"github.com/MRaihanZ/subcommerce-backend/internal/errs"
+	"github.com/google/uuid"
 )
 
 func GetAllOrder(userId interface{}) ([]entity.OrderGetResponse, error) {
@@ -127,12 +128,17 @@ func CreateOrder(id interface{}, order []entity.OrderRequest, paymentUrl string,
 	query := "INSERT INTO orders (user_id, payment_id, order_status_id, product_id, product_variant_id, payment_link, note, quantity, unit_price, total_price, order_uq_id, order_pretty_id) VALUES "
 	args := []interface{}{}
 	reqData := []string{}
-
+	var newOrderId uuid.UUID
 	for i, arg := range order {
 		n := i*11 + 1
 		reqData = append(reqData, fmt.Sprintf(`($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, 'INV-' || TO_CHAR(NOW(), 'YYYYMMDD') || '-' ||
-  		LPAD(nextval('orders_order_pretty_id_seq')::text, 4, '0'))`, n, n+1, n+2, n+3, n+4, n+5, n+6, n+7, n+8, n+9, n+10))
-		args = append(args, id, arg.PayId, 1, arg.PId, arg.PVId, paymentUrl, arg.Note, arg.Quantity, arg.UnitPrice, arg.TotalPrice, orderId)
+		LPAD(nextval('orders_order_pretty_id_seq')::text, 4, '0'))`, n, n+1, n+2, n+3, n+4, n+5, n+6, n+7, n+8, n+9, n+10))
+		if i > 0 {
+			newOrderId = uuid.New()
+			args = append(args, id, arg.PayId, 1, arg.PId, arg.PVId, paymentUrl, arg.Note, arg.Quantity, arg.UnitPrice, arg.TotalPrice, newOrderId)
+		} else {
+			args = append(args, id, arg.PayId, 1, arg.PId, arg.PVId, paymentUrl, arg.Note, arg.Quantity, arg.UnitPrice, arg.TotalPrice, orderId)
+		}
 	}
 	query += strings.Join(reqData, ",")
 	query += "RETURNING user_id"
@@ -147,6 +153,7 @@ func CreateOrder(id interface{}, order []entity.OrderRequest, paymentUrl string,
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, errs.ErrNoOrderFound
 		}
+		log.Println(err)
 		return nil, err
 	}
 
@@ -156,6 +163,7 @@ func CreateOrder(id interface{}, order []entity.OrderRequest, paymentUrl string,
 			if errors.Is(err, errs.ErrNoCheckoutFound) {
 				return nil, errs.ErrNoCheckoutFound
 			}
+			log.Println("state order", err)
 			return nil, err
 		}
 	}
@@ -333,6 +341,44 @@ func UpdateStatusOrder(orderId string, statusId int) (*string, error) {
 	}
 
 	return &orderId, nil
+}
+
+func GetPaymentLink(orderId string) (*string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var paymentLink string
+	err := db.DB.GetContext(ctx, &paymentLink, "SELECT payment_link FROM orders WHERE order_uq_id = $1", orderId)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &paymentLink, nil
+}
+
+func UpdateStatusOrderPaymentLink(paymentLink string, statusId int) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	res, err := db.DB.ExecContext(ctx, `UPDATE orders SET order_status_id = $1
+	WHERE payment_link = $2`, statusId, paymentLink)
+	if err != nil {
+		return err
+	}
+
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rows == 0 {
+		return errs.ErrNoOrderFound
+	}
+
+	return nil
 }
 
 func UpdateRatingOrder(productId int, productVariantId int, orderId int, userId interface{}) (*bool, error) {

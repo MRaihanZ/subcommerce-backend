@@ -267,25 +267,50 @@ func CancelOrderHandler(c *gin.Context) {
 	}
 
 	// call service
-	err := service.CancelPayment(orderId)
-	if err != nil {
-		msg := err.Error()
-		res := entity.Response[any]{
-			Code:   http.StatusBadRequest,
-			Status: "error",
-			Data:   nil,
-			Error:  &msg,
-		}
-		c.JSON(http.StatusBadRequest, res)
-		return
-	}
+	// err := service.CancelPayment(orderId)
+	// if err != nil {
+	// 	msg := err.Error()
+	// 	res := entity.Response[any]{
+	// 		Code:   http.StatusBadRequest,
+	// 		Status: "error",
+	// 		Data:   nil,
+	// 		Error:  &msg,
+	// 	}
+	// 	c.JSON(http.StatusBadRequest, res)
+	// 	return
+	// }
 
 	// remove last "-<digits>"
 	re := regexp.MustCompile(`-\d+$`)
 	newOrderID := re.ReplaceAllString(orderId, "")
 
+	paymentLink, err := model.GetPaymentLink(newOrderID)
+	if err != nil {
+		msg := err.Error()
+		res := entity.Response[any]{
+			Code:   http.StatusInternalServerError,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusInternalServerError, res)
+		return
+	}
+
+	if paymentLink == nil {
+		msg := "payment link not found"
+		res := entity.Response[any]{
+			Code:   http.StatusNotFound,
+			Status: "error",
+			Data:   nil,
+			Error:  &msg,
+		}
+		c.JSON(http.StatusNotFound, res)
+		return
+	}
+
 	// update order status → pembayaran dibatalkan (2)
-	_, err = model.UpdateStatusOrder(newOrderID, 2)
+	err = model.UpdateStatusOrderPaymentLink(*paymentLink, 2)
 	if err != nil {
 		msg := err.Error()
 		res := entity.Response[any]{
