@@ -28,6 +28,7 @@ const batchSize = 5
 
 func RunReminderCron() {
 	today := time.Now().Format("2006-01-02")
+	tomorrow := time.Now().AddDate(0, 0, 1).Format("2006-01-02")
 	var caser cases.Caser
 	var err error
 	var rows []entity.SubscriptionData
@@ -71,7 +72,14 @@ func RunReminderCron() {
 			}
 
 			// 3️⃣ Check schedule dates
-			if checkSchedule(r.NextRemove, today) {
+			if checkSchedule(r.NextRemove, tomorrow) {
+				err = model.UpdateIsOver(r.ID)
+				if err != nil {
+					defer errorUpdateReminderSchedules()
+					errMessage := "Failed to update data in table reminder_schedules: " + err.Error()
+					panic(errMessage)
+				}
+			} else if checkSchedule(r.NextRemove, today) {
 				log.Println(
 					"REMOVE: ",
 					r.ID,
@@ -80,13 +88,6 @@ func RunReminderCron() {
 					r.ProductVariantID,
 				)
 				emailData.Status = "🛑 Jatuh Tempo"
-
-				err = model.UpdateIsOver(r.ID)
-				if err != nil {
-					defer errorUpdateReminderSchedules()
-					errMessage := "Failed to update data in table reminder_schedules: " + err.Error()
-					panic(errMessage)
-				}
 			} else if checkSchedule(r.NextWarningSend, today) {
 				log.Println(
 					"WARNING: ",
