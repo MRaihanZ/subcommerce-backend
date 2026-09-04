@@ -72,7 +72,17 @@ func RunReminderCron() {
 			}
 
 			// 3️⃣ Check schedule dates
-			if checkSchedule(r.NextRemove, tomorrow) {
+			log.Println(r.NextRemove)
+			log.Println(r.NextRemove.AddDate(0, 0, 1))
+			log.Println(tomorrow)
+			if checkSchedule(r.NextRemove.AddDate(0, 0, 1), tomorrow) {
+				log.Println(
+					"IS OVER: ",
+					r.ID,
+					r.UserID,
+					r.ProductID,
+					r.ProductVariantID,
+				)
 				err = model.UpdateIsOver(r.ID)
 				if err != nil {
 					defer errorUpdateReminderSchedules()
