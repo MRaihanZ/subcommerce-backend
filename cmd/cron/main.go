@@ -50,6 +50,8 @@ func main() {
 
 	// Run every day at 07:00
 	// Run every second
+	// To run every one minute "*/1 * * * *"
+	// To run every day at 07:00 "0 7 * * *"
 	c.AddFunc("0 7 * * *", func() {
 		log.Println("✅ Starting Reminder Cron")
 		service.RunReminderCron()
